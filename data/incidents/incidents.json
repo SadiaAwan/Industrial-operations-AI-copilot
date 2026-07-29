@@ -1,0 +1,275 @@
+{
+  "seed": 104,
+  "incidents": [
+    {
+      "incident_id": "INC-001",
+      "machine_id": "P-101",
+      "occurred_at": "2026-06-18T01:00:00Z",
+      "severity": "high",
+      "summary": "Rising drive-end vibration and bearing temperature. Confirmed cause: bearing degradation.",
+      "root_cause": "bearing degradation",
+      "resolution": "Bearing replaced and shaft alignment verified"
+    },
+    {
+      "incident_id": "INC-002",
+      "machine_id": "P-102",
+      "occurred_at": "2026-06-01T05:00:00Z",
+      "severity": "high",
+      "summary": "Fluctuating vibration, low suction pressure, and reduced flow. Confirmed cause: cavitation.",
+      "root_cause": "cavitation",
+      "resolution": "Inlet restriction removed and suction conditions restored"
+    },
+    {
+      "incident_id": "INC-003",
+      "machine_id": "P-103",
+      "occurred_at": "2026-05-15T01:00:00Z",
+      "severity": "medium",
+      "summary": "Elevated vibration after coupling maintenance. Confirmed cause: shaft misalignment.",
+      "root_cause": "shaft misalignment",
+      "resolution": "Motor and pump shafts realigned"
+    },
+    {
+      "incident_id": "INC-004",
+      "machine_id": "P-104",
+      "occurred_at": "2026-04-27T22:00:00Z",
+      "severity": "high",
+      "summary": "High motor current with reduced rotational speed. Confirmed cause: motor overload.",
+      "root_cause": "motor overload",
+      "resolution": "Process load reduced and motor protection inspected"
+    },
+    {
+      "incident_id": "INC-005",
+      "machine_id": "P-105",
+      "occurred_at": "2026-04-11T09:00:00Z",
+      "severity": "medium",
+      "summary": "Falling suction pressure and flow rate. Confirmed cause: blocked strainer.",
+      "root_cause": "blocked strainer",
+      "resolution": "Suction strainer isolated and cleaned"
+    },
+    {
+      "incident_id": "INC-006",
+      "machine_id": "P-101",
+      "occurred_at": "2026-03-25T10:00:00Z",
+      "severity": "high",
+      "summary": "Rising drive-end vibration and bearing temperature. Confirmed cause: bearing degradation.",
+      "root_cause": "bearing degradation",
+      "resolution": "Bearing replaced and shaft alignment verified"
+    },
+    {
+      "incident_id": "INC-007",
+      "machine_id": "P-102",
+      "occurred_at": "2026-03-08T06:00:00Z",
+      "severity": "high",
+      "summary": "Fluctuating vibration, low suction pressure, and reduced flow. Confirmed cause: cavitation.",
+      "root_cause": "cavitation",
+      "resolution": "Inlet restriction removed and suction conditions restored"
+    },
+    {
+      "incident_id": "INC-008",
+      "machine_id": "P-103",
+      "occurred_at": "2026-02-19T02:00:00Z",
+      "severity": "medium",
+      "summary": "Elevated vibration after coupling maintenance. Confirmed cause: shaft misalignment.",
+      "root_cause": "shaft misalignment",
+      "resolution": "Motor and pump shafts realigned"
+    },
+    {
+      "incident_id": "INC-009",
+      "machine_id": "P-104",
+      "occurred_at": "2026-02-01T22:00:00Z",
+      "severity": "high",
+      "summary": "High motor current with reduced rotational speed. Confirmed cause: motor overload.",
+      "root_cause": "motor overload",
+      "resolution": "Process load reduced and motor protection inspected"
+    },
+    {
+      "incident_id": "INC-010",
+      "machine_id": "P-105",
+      "occurred_at": "2026-01-16T01:00:00Z",
+      "severity": "medium",
+      "summary": "Falling suction pressure and flow rate. Confirmed cause: blocked strainer.",
+      "root_cause": "blocked strainer",
+      "resolution": "Suction strainer isolated and cleaned"
+    },
+    {
+      "incident_id": "INC-011",
+      "machine_id": "P-101",
+      "occurred_at": "2025-12-30T05:00:00Z",
+      "severity": "high",
+      "summary": "Rising drive-end vibration and bearing temperature. Confirmed cause: bearing degradation.",
+      "root_cause": "bearing degradation",
+      "resolution": "Bearing replaced and shaft alignment verified"
+    },
+    {
+      "incident_id": "INC-012",
+      "machine_id": "P-102",
+      "occurred_at": "2025-12-13T06:00:00Z",
+      "severity": "high",
+      "summary": "Fluctuating vibration, low suction pressure, and reduced flow. Confirmed cause: cavitation.",
+      "root_cause": "cavitation",
+      "resolution": "Inlet restriction removed and suction conditions restored"
+    },
+    {
+      "incident_id": "INC-013",
+      "machine_id": "P-103",
+      "occurred_at": "2025-11-26T08:00:00Z",
+      "severity": "medium",
+      "summary": "Elevated vibration after coupling maintenance. Confirmed cause: shaft misalignment.",
+      "root_cause": "shaft misalignment",
+      "resolution": "Motor and pump shafts realigned"
+    },
+    {
+      "incident_id": "INC-014",
+      "machine_id": "P-104",
+      "occurred_at": "2025-11-09T05:00:00Z",
+      "severity": "high",
+      "summary": "High motor current with reduced rotational speed. Confirmed cause: motor overload.",
+      "root_cause": "motor overload",
+      "resolution": "Process load reduced and motor protection inspected"
+    },
+    {
+      "incident_id": "INC-015",
+      "machine_id": "P-105",
+      "occurred_at": "2025-10-23T08:00:00Z",
+      "severity": "medium",
+      "summary": "Falling suction pressure and flow rate. Confirmed cause: blocked strainer.",
+      "root_cause": "blocked strainer",
+      "resolution": "Suction strainer isolated and cleaned"
+    },
+    {
+      "incident_id": "INC-016",
+      "machine_id": "P-101",
+      "occurred_at": "2025-10-05T22:00:00Z",
+      "severity": "high",
+      "summary": "Rising drive-end vibration and bearing temperature. Confirmed cause: bearing degradation.",
+      "root_cause": "bearing degradation",
+      "resolution": "Bearing replaced and shaft alignment verified"
+    },
+    {
+      "incident_id": "INC-017",
+      "machine_id": "P-102",
+      "occurred_at": "2025-09-19T08:00:00Z",
+      "severity": "high",
+      "summary": "Fluctuating vibration, low suction pressure, and reduced flow. Confirmed cause: cavitation.",
+      "root_cause": "cavitation",
+      "resolution": "Inlet restriction removed and suction conditions restored"
+    },
+    {
+      "incident_id": "INC-018",
+      "machine_id": "P-103",
+      "occurred_at": "2025-09-02T09:00:00Z",
+      "severity": "medium",
+      "summary": "Elevated vibration after coupling maintenance. Confirmed cause: shaft misalignment.",
+      "root_cause": "shaft misalignment",
+      "resolution": "Motor and pump shafts realigned"
+    },
+    {
+      "incident_id": "INC-019",
+      "machine_id": "P-104",
+      "occurred_at": "2025-08-16T00:00:00Z",
+      "severity": "high",
+      "summary": "High motor current with reduced rotational speed. Confirmed cause: motor overload.",
+      "root_cause": "motor overload",
+      "resolution": "Process load reduced and motor protection inspected"
+    },
+    {
+      "incident_id": "INC-020",
+      "machine_id": "P-105",
+      "occurred_at": "2025-07-30T04:00:00Z",
+      "severity": "medium",
+      "summary": "Falling suction pressure and flow rate. Confirmed cause: blocked strainer.",
+      "root_cause": "blocked strainer",
+      "resolution": "Suction strainer isolated and cleaned"
+    },
+    {
+      "incident_id": "INC-021",
+      "machine_id": "P-101",
+      "occurred_at": "2025-07-13T05:00:00Z",
+      "severity": "high",
+      "summary": "Rising drive-end vibration and bearing temperature. Confirmed cause: bearing degradation.",
+      "root_cause": "bearing degradation",
+      "resolution": "Bearing replaced and shaft alignment verified"
+    },
+    {
+      "incident_id": "INC-022",
+      "machine_id": "P-102",
+      "occurred_at": "2025-06-26T08:00:00Z",
+      "severity": "high",
+      "summary": "Fluctuating vibration, low suction pressure, and reduced flow. Confirmed cause: cavitation.",
+      "root_cause": "cavitation",
+      "resolution": "Inlet restriction removed and suction conditions restored"
+    },
+    {
+      "incident_id": "INC-023",
+      "machine_id": "P-103",
+      "occurred_at": "2025-06-09T04:00:00Z",
+      "severity": "medium",
+      "summary": "Elevated vibration after coupling maintenance. Confirmed cause: shaft misalignment.",
+      "root_cause": "shaft misalignment",
+      "resolution": "Motor and pump shafts realigned"
+    },
+    {
+      "incident_id": "INC-024",
+      "machine_id": "P-104",
+      "occurred_at": "2025-05-23T01:00:00Z",
+      "severity": "high",
+      "summary": "High motor current with reduced rotational speed. Confirmed cause: motor overload.",
+      "root_cause": "motor overload",
+      "resolution": "Process load reduced and motor protection inspected"
+    },
+    {
+      "incident_id": "INC-025",
+      "machine_id": "P-105",
+      "occurred_at": "2025-05-06T04:00:00Z",
+      "severity": "medium",
+      "summary": "Falling suction pressure and flow rate. Confirmed cause: blocked strainer.",
+      "root_cause": "blocked strainer",
+      "resolution": "Suction strainer isolated and cleaned"
+    },
+    {
+      "incident_id": "INC-026",
+      "machine_id": "P-101",
+      "occurred_at": "2025-04-19T03:00:00Z",
+      "severity": "high",
+      "summary": "Rising drive-end vibration and bearing temperature. Confirmed cause: bearing degradation.",
+      "root_cause": "bearing degradation",
+      "resolution": "Bearing replaced and shaft alignment verified"
+    },
+    {
+      "incident_id": "INC-027",
+      "machine_id": "P-102",
+      "occurred_at": "2025-04-02T03:00:00Z",
+      "severity": "high",
+      "summary": "Fluctuating vibration, low suction pressure, and reduced flow. Confirmed cause: cavitation.",
+      "root_cause": "cavitation",
+      "resolution": "Inlet restriction removed and suction conditions restored"
+    },
+    {
+      "incident_id": "INC-028",
+      "machine_id": "P-103",
+      "occurred_at": "2025-03-16T00:00:00Z",
+      "severity": "medium",
+      "summary": "Elevated vibration after coupling maintenance. Confirmed cause: shaft misalignment.",
+      "root_cause": "shaft misalignment",
+      "resolution": "Motor and pump shafts realigned"
+    },
+    {
+      "incident_id": "INC-029",
+      "machine_id": "P-104",
+      "occurred_at": "2025-02-27T07:00:00Z",
+      "severity": "high",
+      "summary": "High motor current with reduced rotational speed. Confirmed cause: motor overload.",
+      "root_cause": "motor overload",
+      "resolution": "Process load reduced and motor protection inspected"
+    },
+    {
+      "incident_id": "INC-030",
+      "machine_id": "P-105",
+      "occurred_at": "2025-02-09T23:00:00Z",
+      "severity": "medium",
+      "summary": "Falling suction pressure and flow rate. Confirmed cause: blocked strainer.",
+      "root_cause": "blocked strainer",
+      "resolution": "Suction strainer isolated and cleaned"
+    }
+  ]
+}

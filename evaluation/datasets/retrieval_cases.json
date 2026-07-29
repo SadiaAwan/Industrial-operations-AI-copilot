@@ -1,0 +1,36 @@
+{
+  "dataset_id": "retrieval-cases-v0.1",
+  "purpose": "Initial phase-2 questions; scorers are implemented in later phases.",
+  "cases": [
+    {
+      "case_id": "RET-001",
+      "question": "What must happen before inspecting the drive-end bearing?",
+      "expected_document": "lockout_tagout_sop",
+      "expected_section": "4.2"
+    },
+    {
+      "case_id": "RET-002",
+      "question": "What can cause rising vibration and bearing temperature?",
+      "expected_document": "pump_maintenance_manual_v2",
+      "expected_section": "7.3"
+    },
+    {
+      "case_id": "RET-003",
+      "question": "Which indicators suggest pump cavitation?",
+      "expected_document": "pump_maintenance_manual_v2",
+      "expected_section": "6.2"
+    },
+    {
+      "case_id": "RET-004",
+      "question": "When should alignment be checked after coupling maintenance?",
+      "expected_document": "pump_installation_manual_v1",
+      "expected_section": "5.3"
+    },
+    {
+      "case_id": "RET-005",
+      "question": "Can a technician touch a hot bearing housing during operation?",
+      "expected_document": "high_temperature_bearing_safety",
+      "expected_section": "3.3"
+    }
+  ]
+}

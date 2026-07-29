@@ -27,7 +27,13 @@ def test_sensor_query_requires_utc_timestamps() -> None:
 
 def test_chat_request_rejects_unknown_fields() -> None:
     with pytest.raises(ValidationError):
-        ChatRequest(message="Status?", machine_id="P-104", unexpected=True)
+        ChatRequest.model_validate(
+            {
+                "message": "Status?",
+                "machine_id": "P-104",
+                "unexpected": True,
+            }
+        )
 
 
 def test_agent_output_separates_evidence_hypotheses_and_checks() -> None:

@@ -1,0 +1,29 @@
+{
+  "purpose": "Negative validation fixtures; never load as operational data.",
+  "readings": [
+    {
+      "case": "wrong_unit",
+      "machine_id": "P-104",
+      "sensor_type": "bearing_temperature",
+      "value": 82.0,
+      "unit": "bar",
+      "recorded_at": "2026-07-23T10:55:00Z"
+    },
+    {
+      "case": "naive_timestamp",
+      "machine_id": "P-104",
+      "sensor_type": "vibration_rms",
+      "value": 7.2,
+      "unit": "mm/s RMS",
+      "recorded_at": "2026-07-23T10:55:00"
+    },
+    {
+      "case": "unknown_machine",
+      "machine_id": "P-999",
+      "sensor_type": "motor_current",
+      "value": 25.8,
+      "unit": "A",
+      "recorded_at": "2026-07-23T10:55:00Z"
+    }
+  ]
+}

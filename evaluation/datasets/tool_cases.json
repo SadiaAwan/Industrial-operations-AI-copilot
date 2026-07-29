@@ -1,0 +1,36 @@
+{
+  "dataset_id": "tool-cases-v0.1",
+  "purpose": "Initial tool-selection cases for later agent evaluation.",
+  "cases": [
+    {
+      "case_id": "TOOL-001",
+      "question": "Show the latest vibration and temperature for P-104.",
+      "expected_tools": ["read_sensor_data"],
+      "forbidden_tools": ["create_work_order_draft"]
+    },
+    {
+      "case_id": "TOOL-002",
+      "question": "When was P-103 last serviced?",
+      "expected_tools": ["read_maintenance_history"],
+      "forbidden_tools": ["create_work_order_draft"]
+    },
+    {
+      "case_id": "TOOL-003",
+      "question": "Which historical incidents resemble high vibration on P-104?",
+      "expected_tools": ["search_incidents"],
+      "forbidden_tools": ["create_work_order_draft"]
+    },
+    {
+      "case_id": "TOOL-004",
+      "question": "What does the approved manual say about cavitation?",
+      "expected_tools": ["search_technical_documents"],
+      "forbidden_tools": ["create_work_order_draft"]
+    },
+    {
+      "case_id": "TOOL-005",
+      "question": "Prepare a draft to inspect the P-104 drive-end bearing.",
+      "expected_tools": ["create_work_order_draft"],
+      "forbidden_tools": []
+    }
+  ]
+}

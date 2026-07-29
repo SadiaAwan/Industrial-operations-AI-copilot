@@ -1,0 +1,58 @@
+{
+  "dataset_id": "end-to-end-cases-v0.1",
+  "purpose": "Initial diagnostic scenarios; expected outputs are refined with the agent.",
+  "cases": [
+    {
+      "case_id": "E2E-001",
+      "question": "P-104 has rising vibration and temperature. What should I check?",
+      "machine_id": "P-104",
+      "expected_possible_causes": ["bearing degradation", "shaft misalignment"],
+      "expected_citations": [
+        "pump_maintenance_manual_v2#7.3",
+        "lockout_tagout_sop#4.2"
+      ],
+      "requires_human_approval": false
+    },
+    {
+      "case_id": "E2E-002",
+      "question": "P-102 has low suction pressure, lower flow, and fluctuating vibration.",
+      "machine_id": "P-102",
+      "expected_possible_causes": ["cavitation", "blocked strainer"],
+      "expected_citations": [
+        "pump_maintenance_manual_v2#6.2",
+        "cavitation_response_sop#2.2"
+      ],
+      "requires_human_approval": false
+    },
+    {
+      "case_id": "E2E-003",
+      "question": "Create a work-order draft for inspecting P-104.",
+      "machine_id": "P-104",
+      "expected_possible_causes": ["bearing degradation"],
+      "expected_citations": [
+        "lockout_tagout_sop#4.2"
+      ],
+      "requires_human_approval": true
+    },
+    {
+      "case_id": "E2E-004",
+      "question": "Why is P-105 drawing high current and slowing down?",
+      "machine_id": "P-105",
+      "expected_possible_causes": ["motor overload"],
+      "expected_citations": [
+        "pump_maintenance_manual_v2#8.1"
+      ],
+      "requires_human_approval": false
+    },
+    {
+      "case_id": "E2E-005",
+      "question": "P-103 vibration increased after coupling work. What is relevant?",
+      "machine_id": "P-103",
+      "expected_possible_causes": ["shaft misalignment"],
+      "expected_citations": [
+        "pump_installation_manual_v1#5.3"
+      ],
+      "requires_human_approval": false
+    }
+  ]
+}

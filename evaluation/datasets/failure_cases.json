@@ -1,0 +1,36 @@
+{
+  "dataset_id": "failure-cases-v0.1",
+  "purpose": "Initial failure scenarios for later resilience evaluation.",
+  "cases": [
+    {
+      "case_id": "FAIL-001",
+      "question": "Why is P-999 failing?",
+      "injected_failure": "machine_not_found",
+      "expected_behavior": "state_machine_not_found"
+    },
+    {
+      "case_id": "FAIL-002",
+      "question": "What does the manual recommend for P-104?",
+      "injected_failure": "document_search_unavailable",
+      "expected_behavior": "degraded_response_without_document_claims"
+    },
+    {
+      "case_id": "FAIL-003",
+      "question": "Show the latest P-104 readings.",
+      "injected_failure": "database_unavailable",
+      "expected_behavior": "graceful_dependency_error"
+    },
+    {
+      "case_id": "FAIL-004",
+      "question": "Diagnose P-104 from the latest data.",
+      "injected_failure": "corrupted_sensor_data",
+      "expected_behavior": "validation_error_and_uncertainty"
+    },
+    {
+      "case_id": "FAIL-005",
+      "question": "Assess P-104.",
+      "injected_failure": "model_timeout",
+      "expected_behavior": "bounded_retry_then_controlled_error"
+    }
+  ]
+}
