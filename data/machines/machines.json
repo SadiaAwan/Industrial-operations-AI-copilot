@@ -1,0 +1,48 @@
+{
+  "seed": 104,
+  "generated_at": "2026-07-23T10:00:00+00:00",
+  "machines": [
+    {
+      "machine_id": "P-101",
+      "name": "Cooling Water Pump 1",
+      "machine_type": "centrifugal_pump",
+      "status": "active",
+      "location": "Utilities / Cooling loop A"
+    },
+    {
+      "machine_id": "P-102",
+      "name": "Process Feed Pump 2",
+      "machine_type": "centrifugal_pump",
+      "status": "active",
+      "location": "Process Area / Feed train"
+    },
+    {
+      "machine_id": "P-103",
+      "name": "Transfer Pump 3",
+      "machine_type": "centrifugal_pump",
+      "status": "maintenance",
+      "location": "Tank Farm / Transfer line"
+    },
+    {
+      "machine_id": "P-104",
+      "name": "Cooling Water Pump 4",
+      "machine_type": "centrifugal_pump",
+      "status": "active",
+      "location": "Utilities / Cooling loop B"
+    },
+    {
+      "machine_id": "P-105",
+      "name": "Booster Pump 5",
+      "machine_type": "centrifugal_pump",
+      "status": "active",
+      "location": "Distribution / Booster station"
+    }
+  ],
+  "scenario_by_machine": {
+    "P-101": "normal",
+    "P-102": "cavitation",
+    "P-103": "misalignment",
+    "P-104": "bearing_degradation",
+    "P-105": "overload"
+  }
+}
