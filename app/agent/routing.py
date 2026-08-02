@@ -43,10 +43,9 @@ _INTENT_TERMS: Mapping[AgentIntent, tuple[str, ...]] = {
         "sensor",
         "latest reading",
         "current reading",
-        "temperature",
-        "vibration",
-        "pressure",
-        "flow",
+        "show readings",
+        "show the latest",
+        "sensor status",
     ),
 }
 
