@@ -76,10 +76,42 @@ class IncidentRepository(Repository[IncidentModel]):
     def __init__(self, session: Session) -> None:
         super().__init__(session, IncidentModel)
 
+    def search(
+        self,
+        machine_id: str,
+        *,
+        query: str | None = None,
+        limit: int = 20,
+    ) -> Sequence[IncidentModel]:
+        statement = select(IncidentModel).where(IncidentModel.machine_id == machine_id)
+        if query:
+            escaped = (
+                query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            )
+            pattern = f"%{escaped}%"
+            statement = statement.where(
+                IncidentModel.summary.ilike(pattern, escape="\\")
+            )
+        statement = statement.order_by(IncidentModel.occurred_at.desc()).limit(
+            _bounded(limit)
+        )
+        return self.session.scalars(statement).all()
+
 
 class MaintenanceRepository(Repository[MaintenanceRecordModel]):
     def __init__(self, session: Session) -> None:
         super().__init__(session, MaintenanceRecordModel)
+
+    def for_machine(
+        self, machine_id: str, *, limit: int = 20
+    ) -> Sequence[MaintenanceRecordModel]:
+        statement = (
+            select(MaintenanceRecordModel)
+            .where(MaintenanceRecordModel.machine_id == machine_id)
+            .order_by(MaintenanceRecordModel.performed_at.desc())
+            .limit(_bounded(limit))
+        )
+        return self.session.scalars(statement).all()
 
 
 class WorkOrderRepository(Repository[WorkOrderModel]):
