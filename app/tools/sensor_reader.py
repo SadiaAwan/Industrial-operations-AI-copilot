@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import Sequence
+from datetime import datetime
 from typing import Protocol
 
 from sqlalchemy.exc import OperationalError
@@ -24,8 +25,8 @@ class SensorReader(Protocol):
         self,
         machine_id: str,
         *,
-        start_at: object | None = None,
-        end_at: object | None = None,
+        start_at: datetime | None = None,
+        end_at: datetime | None = None,
         limit: int = 100,
     ) -> Sequence[SensorReadingModel]: ...
 
