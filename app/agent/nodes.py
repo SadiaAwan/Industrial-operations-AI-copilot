@@ -16,6 +16,7 @@ from app.agent.guardrails import GuardrailEngine, GuardrailViolation
 from app.agent.model import RecommendationContext, RecommendationGenerator
 from app.agent.routing import classify_intent, extract_machine_id
 from app.agent.state import AgentIntent, AgentOutcome, AgentState
+from app.approval.workflow import ApprovalWorkflow
 from app.domain.common import Severity
 from app.schemas.recommendations import AgentRecommendation, RecommendedCheck
 from app.schemas.tools import (
@@ -45,6 +46,7 @@ class AgentDependencies:
     work_order_tool: WorkOrderDraftTool
     recommendation_generator: RecommendationGenerator
     guardrails: GuardrailEngine = field(default_factory=GuardrailEngine)
+    approval_workflow: ApprovalWorkflow | None = None
 
 
 class AgentNodes:
@@ -278,12 +280,22 @@ class AgentNodes:
             )
         draft = result.data
         assert draft is not None
+        approval_action = None
+        if self._dependencies.approval_workflow is not None:
+            approval_action = self._dependencies.approval_workflow.propose(
+                session_id=state["session_id"],
+                requested_by=f"agent:{state['session_id']}",
+                action_type="create_work_order",
+                payload=draft.model_dump(mode="json"),
+                now=state["started_at"],
+            )
         calls = state["tool_calls"] + (
             tool_summary(self._dependencies.work_order_tool.name, None),
         )
         return {
             "step_count": self._step(state),
             "proposed_action": draft,
+            "approval_action": approval_action,
             "tool_calls": (
                 tool_summary(self._dependencies.work_order_tool.name, None),
             ),
