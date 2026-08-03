@@ -10,9 +10,7 @@ from app.schemas.feedback import FeedbackCreate, FeedbackResponse
 router = APIRouter(prefix="/api/v1/feedback", tags=["feedback"])
 
 
-@router.post(
-    "", response_model=FeedbackResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post("", response_model=FeedbackResponse, status_code=status.HTTP_201_CREATED)
 async def create_feedback(
     payload: FeedbackCreate,
     services: Annotated[CoreServices, Depends(get_core_services)],
