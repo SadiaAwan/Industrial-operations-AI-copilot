@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from dataclasses import dataclass
 from typing import Protocol, cast
 
@@ -10,7 +10,7 @@ from fastapi import Request
 
 from app.domain.session import AgentSession
 from app.schemas.actions import ApprovalActionResponse, ApprovalDecisionRequest
-from app.schemas.api import MachineStatusResponse
+from app.schemas.api import DependencyStatus, MachineStatusResponse
 from app.schemas.chat import ChatRequest, ChatResponse, ChatStreamEvent
 from app.schemas.feedback import FeedbackCreate, FeedbackResponse
 
@@ -20,7 +20,7 @@ class ChatAPI(Protocol):
 
     def stream(
         self, request: ChatRequest, *, request_id: str
-    ) -> AsyncIterator[ChatStreamEvent]: ...
+    ) -> AsyncGenerator[ChatStreamEvent, None]: ...
 
 
 class MachineAPI(Protocol):
@@ -45,6 +45,10 @@ class FeedbackAPI(Protocol):
     async def create(self, feedback: FeedbackCreate) -> FeedbackResponse: ...
 
 
+class ReadinessAPI(Protocol):
+    async def check(self) -> tuple[DependencyStatus, ...]: ...
+
+
 @dataclass(frozen=True, slots=True)
 class CoreServices:
     chat: ChatAPI
@@ -52,6 +56,7 @@ class CoreServices:
     sessions: SessionAPI
     approvals: ApprovalAPI
     feedback: FeedbackAPI
+    readiness: ReadinessAPI
 
 
 def get_core_services(request: Request) -> CoreServices:
