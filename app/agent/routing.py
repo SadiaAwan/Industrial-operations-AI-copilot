@@ -68,6 +68,8 @@ def route_after_validation(state: AgentState) -> str:
         return "loop_limit"
     if state["clarification_required"]:
         return "clarification"
+    if state["outcome"] == AgentOutcome.SAFETY_BLOCKED:
+        return "safety_blocked"
     return "classify"
 
 
@@ -110,6 +112,8 @@ def route_after_assessment(state: AgentState) -> str:
 
 
 def route_after_generation(state: AgentState) -> str:
+    if state["outcome"] == AgentOutcome.SAFETY_BLOCKED:
+        return "safety_blocked"
     if state["intent"] == AgentIntent.WORK_ORDER_DRAFT:
         return "draft"
     return "finalize"
