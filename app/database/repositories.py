@@ -138,6 +138,7 @@ class ApprovalActionRepository:
 
     def add(self, action: ApprovalAction) -> None:
         self.session.add(self._to_model(action))
+        self.session.flush()
 
     def save(self, action: ApprovalAction) -> None:
         model = self.session.get(ApprovalActionModel, action.action_id)
