@@ -59,6 +59,7 @@ class ApprovalStatus(StrEnum):
     APPROVED = "approved"
     REJECTED = "rejected"
     EXPIRED = "expired"
+    EXECUTED = "executed"
 
 
 class FeedbackRating(StrEnum):

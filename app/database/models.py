@@ -221,15 +221,21 @@ class ApprovalActionModel(Base):
     __tablename__ = "approval_actions"
     __table_args__ = (
         CheckConstraint(
-            "status IN ('pending','approved','rejected','expired')",
+            "status IN ('pending','approved','rejected','expired','executed')",
             name="ck_approval_actions_status",
         ),
         CheckConstraint("expires_at > created_at", name="ck_approval_expiry"),
         CheckConstraint(
-            "(status IN ('approved','rejected') AND decided_at IS NOT NULL AND "
+            "(status IN ('approved','rejected','executed') AND "
+            "decided_at IS NOT NULL AND "
             "decided_by IS NOT NULL) OR (status IN ('pending','expired') AND "
             "decided_at IS NULL AND decided_by IS NULL)",
             name="ck_approval_decision_metadata",
+        ),
+        CheckConstraint(
+            "(status = 'executed' AND executed_at IS NOT NULL) OR "
+            "(status <> 'executed' AND executed_at IS NULL)",
+            name="ck_approval_execution_metadata",
         ),
         Index("ix_approval_session_status", "session_id", "status"),
     )
@@ -251,3 +257,4 @@ class ApprovalActionModel(Base):
     )
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     decided_by: Mapped[str | None] = mapped_column(String(100))
+    executed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
