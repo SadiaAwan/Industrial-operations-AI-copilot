@@ -7,6 +7,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Annotated, NotRequired, TypedDict
 
+from app.domain.approval import ApprovalAction
 from app.domain.work_order import WorkOrderDraft
 from app.schemas.recommendations import AgentRecommendation, ToolCallSummary
 from app.schemas.tools import (
@@ -34,6 +35,7 @@ class AgentOutcome(StrEnum):
     MACHINE_NOT_FOUND = "machine_not_found"
     TOOL_FAILURE = "tool_failure"
     LOOP_LIMIT_REACHED = "loop_limit_reached"
+    SAFETY_BLOCKED = "safety_blocked"
 
 
 class AgentState(TypedDict):
@@ -54,7 +56,9 @@ class AgentState(TypedDict):
     incidents: tuple[IncidentOutput, ...]
     maintenance: tuple[MaintenanceRecordOutput, ...]
     proposed_action: WorkOrderDraft | None
+    approval_action: ApprovalAction | None
     recommendation: AgentRecommendation | None
+    safety_message: str | None
     outcome: AgentOutcome | None
     errors: Annotated[tuple[ToolError, ...], operator.add]
     tool_calls: Annotated[tuple[ToolCallSummary, ...], operator.add]
@@ -97,7 +101,9 @@ def initial_agent_state(
         incidents=(),
         maintenance=(),
         proposed_action=None,
+        approval_action=None,
         recommendation=None,
+        safety_message=None,
         outcome=None,
         errors=(),
         tool_calls=(),

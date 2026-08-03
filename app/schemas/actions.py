@@ -1,5 +1,7 @@
 """Approval API contracts."""
 
+from typing import Any
+
 from pydantic import Field
 
 from app.domain.approval import ApprovalAction
@@ -14,3 +16,8 @@ class ApprovalDecisionRequest(DomainModel):
 class ApprovalActionResponse(DomainModel):
     action: ApprovalAction
     status: ApprovalStatus
+
+
+class ApprovalExecutionRequest(DomainModel):
+    user_id: str = Field(min_length=1)
+    payload: dict[str, Any]

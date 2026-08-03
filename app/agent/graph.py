@@ -44,6 +44,7 @@ def build_agent_graph(dependencies: AgentDependencies) -> AgentGraph:
         {
             "classify": "classify",
             "clarification": END,
+            "safety_blocked": END,
             "loop_limit": "loop_limit",
         },
     )
@@ -85,7 +86,11 @@ def build_agent_graph(dependencies: AgentDependencies) -> AgentGraph:
     graph.add_conditional_edges(
         "generate",
         route_after_generation,
-        {"draft": "draft", "finalize": "finalize"},
+        {
+            "draft": "draft",
+            "finalize": "finalize",
+            "safety_blocked": END,
+        },
     )
     graph.add_edge("draft", "finalize")
     graph.add_edge("finalize", END)
