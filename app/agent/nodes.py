@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 
 from app.agent.failures import (
@@ -12,6 +12,7 @@ from app.agent.failures import (
     tool_summary,
     uncertainty_message,
 )
+from app.agent.guardrails import GuardrailEngine, GuardrailViolation
 from app.agent.model import RecommendationContext, RecommendationGenerator
 from app.agent.routing import classify_intent, extract_machine_id
 from app.agent.state import AgentIntent, AgentOutcome, AgentState
@@ -43,6 +44,7 @@ class AgentDependencies:
     maintenance_tool: MaintenanceHistoryTool
     work_order_tool: WorkOrderDraftTool
     recommendation_generator: RecommendationGenerator
+    guardrails: GuardrailEngine = field(default_factory=GuardrailEngine)
 
 
 class AgentNodes:
@@ -74,6 +76,15 @@ class AgentNodes:
             return {
                 "outcome": AgentOutcome.LOOP_LIMIT_REACHED,
                 "clarification_required": False,
+            }
+        try:
+            self._dependencies.guardrails.validate_request(state["message"])
+        except GuardrailViolation as violation:
+            return {
+                "step_count": step,
+                "clarification_required": False,
+                "outcome": AgentOutcome.SAFETY_BLOCKED,
+                "safety_message": f"Request blocked by safety policy: {violation.code}",
             }
         machine_id = state["machine_id"] or extract_machine_id(state["message"])
         return {
@@ -190,6 +201,16 @@ class AgentNodes:
         }
 
     async def generate_recommendation(self, state: AgentState) -> StateUpdate:
+        try:
+            self._dependencies.guardrails.validate_documents(state["documents"])
+        except GuardrailViolation as violation:
+            return {
+                "step_count": self._step(state),
+                "outcome": AgentOutcome.SAFETY_BLOCKED,
+                "safety_message": (
+                    f"Retrieved evidence blocked by safety policy: {violation.code}"
+                ),
+            }
         context = RecommendationContext(
             machine_id=self._required_machine(state),
             message=state["message"],
@@ -212,6 +233,19 @@ class AgentNodes:
                 "step_count": self._step(state),
                 "errors": (error,),
                 "outcome": AgentOutcome.TOOL_FAILURE,
+            }
+        try:
+            self._dependencies.guardrails.validate_recommendation(
+                recommendation,
+                documents=state["documents"],
+            )
+        except GuardrailViolation as violation:
+            return {
+                "step_count": self._step(state),
+                "outcome": AgentOutcome.SAFETY_BLOCKED,
+                "safety_message": (
+                    f"Recommendation blocked by safety policy: {violation.code}"
+                ),
             }
         return {
             "step_count": self._step(state),
