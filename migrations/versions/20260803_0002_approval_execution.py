@@ -57,6 +57,9 @@ def downgrade() -> None:
     op.drop_constraint(
         "ck_approval_actions_status", "approval_actions", type_="check"
     )
+    op.execute(
+        "UPDATE approval_actions SET status = 'approved' WHERE status = 'executed'"
+    )
     op.create_check_constraint(
         "ck_approval_actions_status",
         "approval_actions",
