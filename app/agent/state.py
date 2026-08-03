@@ -34,6 +34,7 @@ class AgentOutcome(StrEnum):
     MACHINE_NOT_FOUND = "machine_not_found"
     TOOL_FAILURE = "tool_failure"
     LOOP_LIMIT_REACHED = "loop_limit_reached"
+    SAFETY_BLOCKED = "safety_blocked"
 
 
 class AgentState(TypedDict):
@@ -55,6 +56,7 @@ class AgentState(TypedDict):
     maintenance: tuple[MaintenanceRecordOutput, ...]
     proposed_action: WorkOrderDraft | None
     recommendation: AgentRecommendation | None
+    safety_message: str | None
     outcome: AgentOutcome | None
     errors: Annotated[tuple[ToolError, ...], operator.add]
     tool_calls: Annotated[tuple[ToolCallSummary, ...], operator.add]
@@ -98,6 +100,7 @@ def initial_agent_state(
         maintenance=(),
         proposed_action=None,
         recommendation=None,
+        safety_message=None,
         outcome=None,
         errors=(),
         tool_calls=(),
