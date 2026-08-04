@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Awaitable, Callable
+from time import perf_counter
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Request, Response
@@ -23,11 +25,22 @@ from app.api.routes_health import router as health_router
 from app.api.routes_machines import router as machines_router
 from app.api.routes_sessions import router as sessions_router
 from app.approval.workflow import ApprovalWorkflowError
+from app.observability.logging import (
+    bind_log_context,
+    configure_structured_logging,
+    reset_log_context,
+    safe_log,
+)
+from app.observability.tracing import MlflowTracer, Tracer
 
 RequestHandler = Callable[[Request], Awaitable[Response]]
 
 
-def create_app(*, services: CoreServices | None = None) -> FastAPI:
+def create_app(
+    *,
+    services: CoreServices | None = None,
+    tracer: Tracer | None = None,
+) -> FastAPI:
     application = FastAPI(
         title="Industrial AI Operations Copilot API",
         version="1.0.0",
@@ -35,6 +48,8 @@ def create_app(*, services: CoreServices | None = None) -> FastAPI:
     )
     if services is not None:
         application.state.core_services = services
+    application.state.tracer = tracer or MlflowTracer()
+    application.state.logger = configure_structured_logging()
 
     @application.middleware("http")
     async def correlation_id_middleware(
@@ -43,9 +58,33 @@ def create_app(*, services: CoreServices | None = None) -> FastAPI:
         supplied_id = request.headers.get("X-Correlation-ID", "").strip()
         request_id = supplied_id[:128] if supplied_id else str(uuid4())
         request.state.request_id = request_id
-        response = await call_next(request)
-        response.headers["X-Correlation-ID"] = request_id
-        return response
+        context_tokens = bind_log_context(correlation_id=request_id)
+        started = perf_counter()
+        attributes = {
+            "http.method": request.method,
+            "correlation.id": request_id,
+        }
+        try:
+            with application.state.tracer.start_span(
+                "http.request", span_type="CHAIN", attributes=attributes
+            ) as span:
+                response = await call_next(request)
+                span.set_attribute("http.status_code", response.status_code)
+                route = getattr(request.scope.get("route"), "path", "unmatched")
+                span.set_attribute("http.route", route)
+            response.headers["X-Correlation-ID"] = request_id
+            safe_log(
+                application.state.logger,
+                logging.INFO,
+                "http_request_completed",
+                method=request.method,
+                route=route,
+                status_code=response.status_code,
+                duration_ms=(perf_counter() - started) * 1_000,
+            )
+            return response
+        finally:
+            reset_log_context(context_tokens)
 
     application.add_exception_handler(
         RequestValidationError,
