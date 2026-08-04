@@ -23,6 +23,7 @@ from app.api.routes_chat import router as chat_router
 from app.api.routes_feedback import router as feedback_router
 from app.api.routes_health import router as health_router
 from app.api.routes_machines import router as machines_router
+from app.api.routes_metrics import router as metrics_router
 from app.api.routes_sessions import router as sessions_router
 from app.approval.workflow import ApprovalWorkflowError
 from app.observability.logging import (
@@ -31,6 +32,7 @@ from app.observability.logging import (
     reset_log_context,
     safe_log,
 )
+from app.observability.metrics import ObservabilityMetrics
 from app.observability.tracing import MlflowTracer, Tracer
 
 RequestHandler = Callable[[Request], Awaitable[Response]]
@@ -40,6 +42,7 @@ def create_app(
     *,
     services: CoreServices | None = None,
     tracer: Tracer | None = None,
+    metrics: ObservabilityMetrics | None = None,
 ) -> FastAPI:
     application = FastAPI(
         title="Industrial AI Operations Copilot API",
@@ -50,6 +53,7 @@ def create_app(
         application.state.core_services = services
     application.state.tracer = tracer or MlflowTracer()
     application.state.logger = configure_structured_logging()
+    application.state.metrics = metrics or ObservabilityMetrics()
 
     @application.middleware("http")
     async def correlation_id_middleware(
@@ -82,6 +86,14 @@ def create_app(
                 status_code=response.status_code,
                 duration_ms=(perf_counter() - started) * 1_000,
             )
+            try:
+                application.state.metrics.record_request(
+                    method=request.method,
+                    status_code=response.status_code,
+                    duration=perf_counter() - started,
+                )
+            except Exception:
+                pass
             return response
         finally:
             reset_log_context(context_tokens)
@@ -113,6 +125,7 @@ def create_app(
     application.include_router(actions_router)
     application.include_router(feedback_router)
     application.include_router(health_router)
+    application.include_router(metrics_router)
     return application
 
 
