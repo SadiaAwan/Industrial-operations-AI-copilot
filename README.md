@@ -6,9 +6,9 @@ The system is not an industrial control system. It does not control equipment, a
 
 ## Project status
 
-Phase 0 — requirements and architecture.
-
-No application functionality has been implemented yet.
+Phases 0–9 include the domain model, synthetic data, PostgreSQL persistence,
+retrieval, bounded agent tools, the LangGraph workflow, safety and approval
+guardrails, a FastAPI service, and the Streamlit operations interface.
 
 ## Phase 0 documentation
 
@@ -38,4 +38,21 @@ The MVP supports one equipment type, synthetic data, hybrid document retrieval, 
 
 It excludes real equipment control, autonomous decisions, production SAP or IoT Hub integration, predictive maintenance, and multi-agent orchestration.
 
-Implementation and local setup instructions will be added as the corresponding phases are completed.
+## Run the operations interface
+
+Start the FastAPI service in one terminal:
+
+```bash
+uv run uvicorn app.main:app --reload
+```
+
+Start Streamlit in a second terminal:
+
+```bash
+uv run streamlit run frontend/streamlit_app.py
+```
+
+The UI uses `http://localhost:8000` by default. Copy `.env.example` to `.env`
+to configure the API URL, timeout, and allow-listed machine IDs. The interface
+is advisory: approval controls submit a human decision, while backend gates
+remain authoritative for every write action.
