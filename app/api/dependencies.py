@@ -9,8 +9,10 @@ from typing import Protocol, cast
 from fastapi import Request
 
 from app.domain.session import AgentSession
+from app.schemas.actions import ApprovalActionResponse, ApprovalDecisionRequest
 from app.schemas.api import MachineStatusResponse
 from app.schemas.chat import ChatRequest, ChatResponse, ChatStreamEvent
+from app.schemas.feedback import FeedbackCreate, FeedbackResponse
 
 
 class ChatAPI(Protocol):
@@ -29,11 +31,27 @@ class SessionAPI(Protocol):
     async def get(self, session_id: str) -> AgentSession | None: ...
 
 
+class ApprovalAPI(Protocol):
+    async def decide(
+        self,
+        action_id: str,
+        decision: ApprovalDecisionRequest,
+        *,
+        approve: bool,
+    ) -> ApprovalActionResponse: ...
+
+
+class FeedbackAPI(Protocol):
+    async def create(self, feedback: FeedbackCreate) -> FeedbackResponse: ...
+
+
 @dataclass(frozen=True, slots=True)
 class CoreServices:
     chat: ChatAPI
     machines: MachineAPI
     sessions: SessionAPI
+    approvals: ApprovalAPI
+    feedback: FeedbackAPI
 
 
 def get_core_services(request: Request) -> CoreServices:
