@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 from pydantic import Field
 
+from app.domain.approval import ApprovalAction
 from app.domain.common import DomainModel, MachineId
 from app.schemas.recommendations import AgentRecommendation
 
@@ -18,6 +19,7 @@ class ChatResponse(DomainModel):
     request_id: str = Field(min_length=1)
     session_id: str = Field(min_length=1)
     result: AgentRecommendation
+    approval_action: ApprovalAction | None = None
 
 
 class ChatStreamEvent(DomainModel):
