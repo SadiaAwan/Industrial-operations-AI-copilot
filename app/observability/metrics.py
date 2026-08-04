@@ -146,6 +146,38 @@ class ObservabilityMetrics:
             labels={"model": model, "direction": "output"},
         )
 
+    def record_cost(self, *, model: str, estimated_cost_usd: float) -> None:
+        self.registry.increment(
+            "copilot_estimated_cost_usd_total",
+            value=estimated_cost_usd,
+            labels={"model": model},
+        )
+
+    def record_retrieval(
+        self, *, backend: str, duration: float, result_count: int
+    ) -> None:
+        self.registry.observe(
+            "copilot_retrieval_duration_seconds",
+            duration,
+            labels={"backend": backend},
+        )
+        self.registry.observe(
+            "copilot_retrieval_results",
+            float(result_count),
+            labels={"backend": backend},
+            buckets=(0, 1, 3, 5, 10, 25, 50),
+        )
+
+    def record_approval(self, *, decision: str) -> None:
+        self.registry.increment(
+            "copilot_approval_decisions_total", labels={"decision": decision}
+        )
+
+    def record_agent_outcome(self, *, outcome: str) -> None:
+        self.registry.increment(
+            "copilot_agent_outcomes_total", labels={"outcome": outcome}
+        )
+
 
 class MetricsToolTracer:
     """ToolTracer adapter for status, latency, timeout, and retry metrics."""
