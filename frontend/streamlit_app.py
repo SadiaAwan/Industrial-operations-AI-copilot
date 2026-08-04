@@ -11,7 +11,9 @@ from app.schemas.chat import ChatRequest
 from frontend.api_client import APIClientConfig, CopilotAPIClient, CopilotAPIError
 from frontend.components import (
     chat_prompt,
+    render_action_review,
     render_chat_history,
+    render_feedback,
     render_machine_dashboard,
 )
 from frontend.config import FrontendSettings, get_frontend_settings
@@ -80,6 +82,11 @@ def render_dashboard(client: CopilotAPIClient, state: CopilotUIState) -> None:
     st.divider()
     st.subheader("Diagnostic copilot")
     render_chat_history(state)
+    if state.turns:
+        latest_response = state.turns[-1].response
+        if latest_response.approval_action is not None:
+            render_action_review(latest_response.approval_action, client, state)
+        render_feedback(latest_response, client, state)
     prompt = chat_prompt()
     if prompt is None:
         return
