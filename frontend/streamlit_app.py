@@ -2,14 +2,20 @@
 
 from __future__ import annotations
 
+from time import perf_counter
 from typing import cast
 
 import streamlit as st
 
+from app.schemas.chat import ChatRequest
 from frontend.api_client import APIClientConfig, CopilotAPIClient, CopilotAPIError
-from frontend.components import render_machine_dashboard
+from frontend.components import (
+    chat_prompt,
+    render_chat_history,
+    render_machine_dashboard,
+)
 from frontend.config import FrontendSettings, get_frontend_settings
-from frontend.state import CopilotUIState
+from frontend.state import CopilotUIState, InteractionMetrics
 
 STATE_KEY = "copilot_ui_state"
 
@@ -70,6 +76,35 @@ def render_dashboard(client: CopilotAPIClient, state: CopilotUIState) -> None:
             st.caption(f"Request ID: {exception.request_id}")
         return
     render_machine_dashboard(status)
+
+    st.divider()
+    st.subheader("Diagnostic copilot")
+    render_chat_history(state)
+    prompt = chat_prompt()
+    if prompt is None:
+        return
+
+    started = perf_counter()
+    try:
+        with st.spinner("Gathering grounded evidence…"):
+            response = client.chat(
+                ChatRequest(
+                    message=prompt,
+                    session_id=state.session_id,
+                    machine_id=state.selected_machine_id,
+                )
+            )
+    except CopilotAPIError as exception:
+        st.error(str(exception))
+        if exception.request_id:
+            st.caption(f"Request ID: {exception.request_id}")
+        return
+    state.record_turn(
+        prompt,
+        response,
+        InteractionMetrics(latency_ms=(perf_counter() - started) * 1_000),
+    )
+    st.rerun()
 
 
 def main() -> None:
