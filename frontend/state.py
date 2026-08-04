@@ -34,6 +34,7 @@ class CopilotUIState:
     session_id: str | None = None
     turns: list[ChatTurn] = field(default_factory=list)
     submitted_feedback_request_ids: set[str] = field(default_factory=set)
+    decided_action_ids: set[str] = field(default_factory=set)
 
     def select_machine(self, machine_id: str) -> None:
         if machine_id != self.selected_machine_id:
@@ -41,6 +42,7 @@ class CopilotUIState:
             self.session_id = None
             self.turns.clear()
             self.submitted_feedback_request_ids.clear()
+            self.decided_action_ids.clear()
 
     def record_turn(
         self,
@@ -57,3 +59,6 @@ class CopilotUIState:
 
     def mark_feedback_submitted(self, request_id: str) -> None:
         self.submitted_feedback_request_ids.add(request_id)
+
+    def mark_action_decided(self, action_id: str) -> None:
+        self.decided_action_ids.add(action_id)
