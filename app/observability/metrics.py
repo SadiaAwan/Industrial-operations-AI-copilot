@@ -7,6 +7,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from threading import Lock
 
+from app.observability.tracing import ToolTrace
+
 LabelSet = tuple[tuple[str, str], ...]
 DEFAULT_LATENCY_BUCKETS = (0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0)
 
@@ -143,3 +145,25 @@ class ObservabilityMetrics:
             value=output_tokens,
             labels={"model": model, "direction": "output"},
         )
+
+
+class MetricsToolTracer:
+    """ToolTracer adapter for status, latency, timeout, and retry metrics."""
+
+    def __init__(self, metrics: ObservabilityMetrics) -> None:
+        self._metrics = metrics
+
+    def record(self, trace: ToolTrace) -> None:
+        try:
+            self._metrics.record_tool(
+                tool_name=trace.tool_name,
+                status=trace.status,
+                duration=trace.duration_ms / 1_000,
+                attempts=trace.attempt_count,
+            )
+            if trace.error_code == "timeout":
+                self._metrics.registry.increment(
+                    "copilot_tool_timeouts_total", labels={"tool": trace.tool_name}
+                )
+        except Exception:
+            pass
