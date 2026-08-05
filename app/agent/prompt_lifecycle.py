@@ -60,9 +60,10 @@ class PromptRegistry:
         if self._root not in path.parents:
             raise ValueError("prompt path escapes registry directory")
         content = path.read_bytes()
-        if hashlib.sha256(content).hexdigest() != prompt.sha256:
+        canonical_content = content.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+        if hashlib.sha256(canonical_content).hexdigest() != prompt.sha256:
             raise ValueError(f"prompt digest mismatch: {prompt_id}@{version}")
-        return content.decode("utf-8")
+        return canonical_content.decode("utf-8")
 
     def fingerprint(self) -> str:
         payload = [item.model_dump(mode="json") for item in self._manifest.prompts]
