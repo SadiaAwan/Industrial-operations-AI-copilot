@@ -200,6 +200,7 @@ class AgentFeedbackModel(Base):
             "rating IN ('helpful','not_helpful')", name="ck_agent_feedback_rating"
         ),
         Index("ix_agent_feedback_session_request", "session_id", "request_id"),
+        Index("ix_agent_feedback_trace_id", "trace_id"),
     )
 
     feedback_id: Mapped[str] = mapped_column(String(64), primary_key=True)
@@ -207,10 +208,12 @@ class AgentFeedbackModel(Base):
         ForeignKey("agent_sessions.session_id", ondelete="CASCADE"), nullable=False
     )
     request_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    trace_id: Mapped[str] = mapped_column(String(128), nullable=False)
     rating: Mapped[str] = mapped_column(String(20), nullable=False)
     comment: Mapped[str | None] = mapped_column(Text)
     agent_version: Mapped[str] = mapped_column(String(64), nullable=False)
     prompt_version: Mapped[str] = mapped_column(String(64), nullable=False)
+    prompt_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     model_version: Mapped[str] = mapped_column(String(100), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
