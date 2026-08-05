@@ -19,6 +19,17 @@ def test_metadata_contains_all_phase_three_tables() -> None:
     }
 
 
+def test_feedback_metadata_supports_trace_and_prompt_audit() -> None:
+    table = Base.metadata.tables["agent_feedback"]
+
+    assert table.c.trace_id.nullable is False
+    assert table.c.prompt_sha256.nullable is False
+    assert {index.name for index in table.indexes} >= {
+        "ix_agent_feedback_session_request",
+        "ix_agent_feedback_trace_id",
+    }
+
+
 @pytest.mark.parametrize("limit", [0, 101])
 def test_repository_limits_are_bounded(limit: int) -> None:
     with pytest.raises(ValueError, match="between 1 and 100"):
