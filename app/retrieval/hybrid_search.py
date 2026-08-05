@@ -11,6 +11,7 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict
 
+from app.observability.tracing import NullTracer, Tracer
 from app.retrieval.embeddings import (
     EmbeddedChunk,
     EmbeddingProvider,
@@ -108,6 +109,7 @@ class LocalHybridSearch:
         chunks: Sequence[EmbeddedChunk],
         embedding_provider: EmbeddingProvider,
         rrf_constant: int = 60,
+        tracer: Tracer | None = None,
     ) -> None:
         if rrf_constant < 1:
             raise ValueError("rrf_constant must be positive")
@@ -116,6 +118,7 @@ class LocalHybridSearch:
         self._chunks = tuple(chunks)
         self._embedding_provider = embedding_provider
         self._rrf_constant = rrf_constant
+        self._tracer = tracer or NullTracer()
 
     async def search(
         self,
@@ -123,6 +126,22 @@ class LocalHybridSearch:
         *,
         top_k: int = 5,
         filters: SearchFilters | None = None,
+    ) -> tuple[SearchResult, ...]:
+        with self._tracer.start_span(
+            "retrieval.local_hybrid_search",
+            span_type="RETRIEVER",
+            attributes={"retrieval.top_k": top_k},
+        ) as span:
+            results = await self._search(query, top_k=top_k, filters=filters)
+            span.set_attribute("retrieval.result_count", len(results))
+            return results
+
+    async def _search(
+        self,
+        query: str,
+        *,
+        top_k: int,
+        filters: SearchFilters | None,
     ) -> tuple[SearchResult, ...]:
         if not query.strip():
             raise ValueError("query must not be empty")
