@@ -32,11 +32,14 @@ class ModelPricing:
     cached_input_per_million: Decimal = Decimal("0")
 
     def __post_init__(self) -> None:
-        if min(
-            self.input_per_million,
-            self.output_per_million,
-            self.cached_input_per_million,
-        ) < 0:
+        if (
+            min(
+                self.input_per_million,
+                self.output_per_million,
+                self.cached_input_per_million,
+            )
+            < 0
+        ):
             raise ValueError("token prices must be non-negative")
 
 
