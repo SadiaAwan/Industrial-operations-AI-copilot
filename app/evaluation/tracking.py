@@ -19,7 +19,7 @@ class NullEvaluationTracker:
 class MlflowEvaluationTracker:
     def record(self, report: EvaluationReport) -> None:
         try:
-            import mlflow  # type: ignore[import-not-found]
+            import mlflow
 
             with mlflow.start_run(run_name=f"evaluation-{report.dataset_version}"):
                 mlflow.log_params(
