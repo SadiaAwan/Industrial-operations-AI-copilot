@@ -1,6 +1,5 @@
 """Adversarial tests for deterministic safety and grounding guardrails."""
 
-
 import pytest
 
 from app.agent.guardrails import (
