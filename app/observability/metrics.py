@@ -94,13 +94,9 @@ class MetricRegistry:
                     histogram.buckets, histogram.counts, strict=True
                 ):
                     bucket_labels = _label_text(labels, ("le", f"{upper_bound:g}"))
-                    lines.append(
-                        f"{name}_bucket{bucket_labels} {count}"
-                    )
+                    lines.append(f"{name}_bucket{bucket_labels} {count}")
                 infinite_labels = _label_text(labels, ("le", "+Inf"))
-                lines.append(
-                    f"{name}_bucket{infinite_labels} {histogram.count}"
-                )
+                lines.append(f"{name}_bucket{infinite_labels} {histogram.count}")
                 lines.append(f"{name}_sum{_label_text(labels)} {histogram.total:g}")
                 lines.append(f"{name}_count{_label_text(labels)} {histogram.count}")
         return "\n".join(lines) + ("\n" if lines else "")
