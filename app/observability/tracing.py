@@ -108,7 +108,7 @@ class MlflowTracer:
         attributes: Mapping[str, SafeAttribute] | None = None,
     ) -> Iterator[Span]:
         try:
-            import mlflow  # type: ignore[import-not-found]
+            import mlflow
 
             manager = mlflow.start_span(
                 name=name,
