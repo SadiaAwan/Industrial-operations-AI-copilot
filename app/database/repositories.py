@@ -8,6 +8,7 @@ from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
 from app.database.models import (
+    AgentFeedbackModel,
     ApprovalActionModel,
     IncidentModel,
     MachineModel,
@@ -16,6 +17,7 @@ from app.database.models import (
     WorkOrderModel,
 )
 from app.domain.approval import ApprovalAction
+from app.domain.feedback import AgentFeedback
 
 ModelT = TypeVar("ModelT")
 MAX_RESULTS = 100
@@ -119,6 +121,50 @@ class MaintenanceRepository(Repository[MaintenanceRecordModel]):
 class WorkOrderRepository(Repository[WorkOrderModel]):
     def __init__(self, session: Session) -> None:
         super().__init__(session, WorkOrderModel)
+
+
+class AgentFeedbackRepository:
+    """Feedback persistence with bounded trace and session lookups."""
+
+    def __init__(self, session: Session) -> None:
+        self.session = session
+
+    def add(self, feedback: AgentFeedback) -> None:
+        self.session.add(AgentFeedbackModel(**feedback.model_dump(mode="python")))
+        self.session.flush()
+
+    def for_trace(self, trace_id: str, *, limit: int = 50) -> Sequence[AgentFeedback]:
+        statement = (
+            select(AgentFeedbackModel)
+            .where(AgentFeedbackModel.trace_id == trace_id)
+            .order_by(AgentFeedbackModel.created_at.desc())
+            .limit(_bounded(limit))
+        )
+        return tuple(
+            self._to_domain(model) for model in self.session.scalars(statement)
+        )
+
+    def for_session(
+        self, session_id: str, *, limit: int = 50
+    ) -> Sequence[AgentFeedback]:
+        statement = (
+            select(AgentFeedbackModel)
+            .where(AgentFeedbackModel.session_id == session_id)
+            .order_by(AgentFeedbackModel.created_at.desc())
+            .limit(_bounded(limit))
+        )
+        return tuple(
+            self._to_domain(model) for model in self.session.scalars(statement)
+        )
+
+    @staticmethod
+    def _to_domain(model: AgentFeedbackModel) -> AgentFeedback:
+        return AgentFeedback.model_validate(
+            {
+                column.name: getattr(model, column.name)
+                for column in AgentFeedbackModel.__table__.columns
+            }
+        )
 
 
 class ApprovalActionRepository:
