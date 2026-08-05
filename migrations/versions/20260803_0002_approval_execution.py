@@ -20,9 +20,7 @@ def upgrade() -> None:
         "approval_actions",
         sa.Column("executed_at", sa.DateTime(timezone=True), nullable=True),
     )
-    op.drop_constraint(
-        "ck_approval_actions_status", "approval_actions", type_="check"
-    )
+    op.drop_constraint("ck_approval_actions_status", "approval_actions", type_="check")
     op.drop_constraint(
         "ck_approval_decision_metadata", "approval_actions", type_="check"
     )
@@ -54,9 +52,7 @@ def downgrade() -> None:
     op.drop_constraint(
         "ck_approval_decision_metadata", "approval_actions", type_="check"
     )
-    op.drop_constraint(
-        "ck_approval_actions_status", "approval_actions", type_="check"
-    )
+    op.drop_constraint("ck_approval_actions_status", "approval_actions", type_="check")
     op.execute(
         "UPDATE approval_actions SET status = 'approved' WHERE status = 'executed'"
     )

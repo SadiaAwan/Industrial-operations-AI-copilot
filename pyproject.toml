@@ -38,3 +38,7 @@ select = ["E", "F", "I", "UP"]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["mlflow"]
+ignore_missing_imports = true
