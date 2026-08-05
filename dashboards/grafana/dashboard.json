@@ -1,0 +1,82 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Request rate",
+      "type": "timeseries",
+      "targets": [{"expr": "sum(rate(copilot_http_requests_total[5m])) by (status_class)", "legendFormat": "{{status_class}}"}],
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "title": "Request latency p50 / p95",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum(rate(copilot_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p50"},
+        {"expr": "histogram_quantile(0.95, sum(rate(copilot_http_request_duration_seconds_bucket[5m])) by (le))", "legendFormat": "p95"}
+      ],
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0}
+    },
+    {
+      "id": 3,
+      "title": "Tool failures, retries and timeouts",
+      "type": "timeseries",
+      "targets": [
+        {"expr": "sum(rate(copilot_tool_calls_total{status=\"failed\"}[5m])) by (tool)", "legendFormat": "{{tool}} failures"},
+        {"expr": "sum(rate(copilot_tool_retries_total[5m])) by (tool)", "legendFormat": "{{tool}} retries"},
+        {"expr": "sum(rate(copilot_tool_timeouts_total[5m])) by (tool)", "legendFormat": "{{tool}} timeouts"}
+      ],
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0}
+    },
+    {
+      "id": 4,
+      "title": "Token usage",
+      "type": "timeseries",
+      "targets": [{"expr": "sum(rate(copilot_tokens_total[5m])) by (model, direction)", "legendFormat": "{{model}} {{direction}}"}],
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8}
+    },
+    {
+      "id": 5,
+      "title": "Estimated cost (USD)",
+      "type": "stat",
+      "targets": [{"expr": "sum(increase(copilot_estimated_cost_usd_total[24h]))", "legendFormat": "24h"}],
+      "fieldConfig": {"defaults": {"unit": "currencyUSD"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8}
+    },
+    {
+      "id": 6,
+      "title": "Retrieval latency p95",
+      "type": "timeseries",
+      "targets": [{"expr": "histogram_quantile(0.95, sum(rate(copilot_retrieval_duration_seconds_bucket[5m])) by (le, backend))", "legendFormat": "{{backend}}"}],
+      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8}
+    },
+    {
+      "id": 7,
+      "title": "Approval decisions",
+      "type": "timeseries",
+      "targets": [{"expr": "sum(rate(copilot_approval_decisions_total[5m])) by (decision)", "legendFormat": "{{decision}}"}],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+    },
+    {
+      "id": 8,
+      "title": "Agent outcomes",
+      "type": "timeseries",
+      "targets": [{"expr": "sum(rate(copilot_agent_outcomes_total[5m])) by (outcome)", "legendFormat": "{{outcome}}"}],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["industrial-copilot", "phase-10"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser",
+  "title": "Industrial Operations AI Copilot",
+  "uid": "industrial-operations-copilot",
+  "version": 1
+}
