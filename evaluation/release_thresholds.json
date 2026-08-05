@@ -1,0 +1,9 @@
+{
+  "groundedness": 0.95,
+  "citation_correctness": 1.0,
+  "task_completion": 0.8,
+  "tool_selection": 1.0,
+  "tool_behavior": 1.0,
+  "maximum_latency_ms": 10000,
+  "maximum_cost_usd": 0.1
+}
