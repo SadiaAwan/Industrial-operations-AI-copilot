@@ -1,0 +1,25 @@
+{
+  "prompts": [
+    {
+      "prompt_id": "diagnostics",
+      "version": "diagnostics-v1",
+      "file": "diagnostics_v1.md",
+      "sha256": "3b73b8f5d12675bca6fd46f290020aedad45cebf3356d657fec560c9c9228194",
+      "status": "active"
+    },
+    {
+      "prompt_id": "safety",
+      "version": "safety-v1",
+      "file": "safety_prompt.md",
+      "sha256": "a71cbcccbf0d3534b5fb1f1a8408a6fe1f7eb39feb641ea1d0020903ce8fc06e",
+      "status": "active"
+    },
+    {
+      "prompt_id": "system",
+      "version": "system-v1",
+      "file": "system_prompt.md",
+      "sha256": "3046eabe3c4aea6976aff4f053b4ac90f4a5cdc608fdc4d37ea4ec7f8de459b5",
+      "status": "active"
+    }
+  ]
+}
