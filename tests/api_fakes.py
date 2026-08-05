@@ -128,10 +128,14 @@ class FakeFeedbackService:
                 feedback_id="FEEDBACK-1",
                 session_id=feedback.session_id,
                 request_id=feedback.request_id,
+                trace_id=f"trace-{feedback.request_id}",
                 rating=feedback.rating,
                 comment=feedback.comment,
                 agent_version="phase-08",
                 prompt_version="diagnostics-v1",
+                prompt_sha256=(
+                    "3b73b8f5d12675bca6fd46f290020aedad45cebf3356d657fec560c9c9228194"
+                ),
                 model_version="deterministic-v1",
                 created_at=NOW,
             )
