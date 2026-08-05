@@ -44,7 +44,7 @@ jobs:
           --output evaluation/reports/ci-report.json
 
       - name: Upload evaluation report
-        if: always()
+        if: ${{ always() && hashFiles('evaluation/reports/ci-report.json') != '' }}
         uses: actions/upload-artifact@v7
         with:
           name: phase-11-evaluation-report
