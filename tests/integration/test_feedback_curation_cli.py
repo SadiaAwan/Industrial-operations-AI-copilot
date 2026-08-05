@@ -7,7 +7,7 @@ import pytest
 
 from scripts.curate_feedback_eval_cases import main
 
-PROMPT_DIGEST = "3b73b8f5d12675bca6fd46f290020aedad45cebf3356d657fec560c9c9228194"
+PROMPT_DIGEST = "e45959a50682bc17822873a90070a9dcb08208b935415f4aa1ad1aed0e26abeb"
 
 
 def _record(*, reviewed: bool = True) -> dict[str, object]:
