@@ -18,7 +18,7 @@ from app.evaluation.gates import ReleaseGateError
 from app.schemas.feedback import FeedbackCreate
 
 NOW = datetime(2026, 8, 5, 12, 0, tzinfo=UTC)
-PROMPT_DIGEST = "3b73b8f5d12675bca6fd46f290020aedad45cebf3356d657fec560c9c9228194"
+PROMPT_DIGEST = "e45959a50682bc17822873a90070a9dcb08208b935415f4aa1ad1aed0e26abeb"
 MANIFEST = Path("app/agent/prompts/manifest.json")
 REFERENCE = Path("evaluation/expected_outputs/phase11_reference_results.json")
 
