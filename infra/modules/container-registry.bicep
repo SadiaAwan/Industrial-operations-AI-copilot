@@ -2,7 +2,6 @@
 param location string
 
 @description('Globally unique alphanumeric registry name.')
-@minLength(5)
 @maxLength(50)
 param registryName string
 
