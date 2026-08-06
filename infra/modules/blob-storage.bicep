@@ -2,7 +2,6 @@
 param location string
 
 @description('Globally unique lowercase alphanumeric storage account name.')
-@minLength(3)
 @maxLength(24)
 param storageAccountName string
 

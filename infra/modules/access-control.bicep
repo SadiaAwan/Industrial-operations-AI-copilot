@@ -116,7 +116,6 @@ resource postgresqlAdministrator 'Microsoft.DBforPostgreSQL/flexibleServers/admi
   parent: postgresql
   name: postgresqlAdministratorObjectId
   properties: {
-    objectId: postgresqlAdministratorObjectId
     principalName: postgresqlAdministratorName
     principalType: 'Group'
     tenantId: tenant().tenantId

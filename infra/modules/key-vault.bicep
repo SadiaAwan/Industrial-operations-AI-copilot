@@ -2,7 +2,6 @@
 param location string
 
 @description('Globally unique Key Vault name.')
-@minLength(3)
 @maxLength(24)
 param vaultName string
 

@@ -38,7 +38,7 @@ resource search 'Microsoft.Search/searchServices@2025-05-01' = {
       }
     }
     disableLocalAuth: true
-    hostingMode: 'default'
+    hostingMode: 'Default'
     networkRuleSet: {
       bypass: 'None'
       ipRules: []
