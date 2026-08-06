@@ -6,9 +6,10 @@ The system is not an industrial control system. It does not control equipment, a
 
 ## Project status
 
-Phases 0–9 include the domain model, synthetic data, PostgreSQL persistence,
+Phases 0–13 include the domain model, synthetic data, PostgreSQL persistence,
 retrieval, bounded agent tools, the LangGraph workflow, safety and approval
-guardrails, a FastAPI service, and the Streamlit operations interface.
+guardrails, API and UI delivery, observability, evaluation, feedback lifecycle,
+and a containerized local environment.
 
 ## Phase 0 documentation
 
@@ -39,6 +40,17 @@ The MVP supports one equipment type, synthetic data, hybrid document retrieval, 
 It excludes real equipment control, autonomous decisions, production SAP or IoT Hub integration, predictive maintenance, and multi-agent orchestration.
 
 ## Run the operations interface
+
+For the complete containerized environment, follow the
+[local development guide](docs/operations/local-development.md). The short
+version is:
+
+```bash
+cp .env.example .env
+docker compose up --build --wait
+```
+
+For process-level development, start the services directly as described below.
 
 Start the FastAPI service in one terminal:
 

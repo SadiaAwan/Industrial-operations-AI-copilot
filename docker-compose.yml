@@ -1,19 +1,78 @@
+name: industrial-ai-copilot
+
+x-api-environment: &api-environment
+  RUNTIME_MODE: mock
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-copilot}:${POSTGRES_PASSWORD:-copilot}@postgres:5432/${POSTGRES_DB:-copilot}
+  DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-5}
+  DATABASE_MAX_OVERFLOW: ${DATABASE_MAX_OVERFLOW:-10}
+  DATABASE_POOL_TIMEOUT_SECONDS: ${DATABASE_POOL_TIMEOUT_SECONDS:-30}
+
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17.5-alpine
     environment:
-      POSTGRES_DB: copilot_test
-      POSTGRES_USER: copilot
-      POSTGRES_PASSWORD: copilot
+      POSTGRES_DB: ${POSTGRES_DB:-copilot}
+      POSTGRES_USER: ${POSTGRES_USER:-copilot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-copilot}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U copilot -d copilot_test"]
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
       interval: 2s
       timeout: 3s
       retries: 15
     volumes:
       - copilot_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  database-init:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      - /bin/sh
+      - -ec
+      - alembic upgrade head && python -m scripts.seed_database
+    environment: *api-environment
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment: *api-environment
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      database-init:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      COPILOT_UI_API_BASE_URL: http://api:8000
+      COPILOT_UI_API_TIMEOUT_SECONDS: ${COPILOT_UI_API_TIMEOUT_SECONDS:-20}
+      COPILOT_UI_MACHINE_IDS: ${COPILOT_UI_MACHINE_IDS:-P-104,P-205,P-307}
+    ports:
+      - "${UI_PORT:-8501}:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
 
 volumes:
   copilot_postgres_data:

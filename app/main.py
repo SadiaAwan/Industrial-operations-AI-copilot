@@ -26,6 +26,7 @@ from app.api.routes_machines import router as machines_router
 from app.api.routes_metrics import router as metrics_router
 from app.api.routes_sessions import router as sessions_router
 from app.approval.workflow import ApprovalWorkflowError
+from app.config import get_settings
 from app.observability.logging import (
     bind_log_context,
     configure_structured_logging,
@@ -129,4 +130,10 @@ def create_app(
     return application
 
 
-app = create_app()
+settings = get_settings()
+if settings.runtime_mode == "mock":
+    from app.api.mock_services import build_mock_services
+
+    app = create_app(services=build_mock_services(settings))
+else:
+    app = create_app()
