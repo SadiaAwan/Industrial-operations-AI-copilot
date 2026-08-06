@@ -103,7 +103,7 @@ resource app 'Microsoft.App/containerApps@2025-01-01' = {
             }
           ]
           resources: {
-            cpu: 0.5
+            cpu: json('0.5')
             memory: '1Gi'
           }
         }
