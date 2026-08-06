@@ -1,5 +1,6 @@
-using '../main.bicep'
+using '../subscription.bicep'
 
+param resourceGroupName = 'rg-industrial-ai-staging'
 param environment = 'staging'
 param workloadName = 'industrial-ai'
 param location = 'swedencentral'
