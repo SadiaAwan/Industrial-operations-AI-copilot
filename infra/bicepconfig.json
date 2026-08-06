@@ -31,8 +31,5 @@
         "use-resource-symbol-reference": { "level": "error" }
       }
     }
-  },
-  "experimentalFeaturesEnabled": {
-    "sourceMapping": true
   }
 }
