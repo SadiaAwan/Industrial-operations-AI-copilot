@@ -13,16 +13,17 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 COPY app ./app
-COPY migrations ./migrations
-COPY scripts ./scripts
-COPY alembic.ini ./
+COPY frontend ./frontend
 RUN uv sync --frozen --no-dev
 
 FROM python:3.12.11-slim-bookworm AS runtime
 
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    STREAMLIT_BROWSER_GATHER_USAGE_STATS=false \
+    STREAMLIT_SERVER_ADDRESS=0.0.0.0 \
+    STREAMLIT_SERVER_PORT=8501
 
 RUN addgroup --system --gid 10001 copilot \
     && adduser --system --uid 10001 --ingroup copilot --home /app copilot
@@ -30,14 +31,12 @@ RUN addgroup --system --gid 10001 copilot \
 WORKDIR /app
 COPY --from=builder --chown=copilot:copilot /build/.venv ./.venv
 COPY --from=builder --chown=copilot:copilot /build/app ./app
-COPY --from=builder --chown=copilot:copilot /build/migrations ./migrations
-COPY --from=builder --chown=copilot:copilot /build/scripts ./scripts
-COPY --from=builder --chown=copilot:copilot /build/alembic.ini ./alembic.ini
+COPY --from=builder --chown=copilot:copilot /build/frontend ./frontend
 
 USER 10001:10001
-EXPOSE 8000
+EXPOSE 8501
 
-HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=5 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=2)"]
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["streamlit", "run", "frontend/streamlit_app.py"]
