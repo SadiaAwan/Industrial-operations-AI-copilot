@@ -68,8 +68,46 @@ module storage 'modules/blob-storage.bicep' = {
   }
 }
 
+module network 'modules/network.bicep' = {
+  name: 'applicationNetwork'
+  params: {
+    location: location
+    namePrefix: namePrefix
+    tags: commonTags
+  }
+}
+
+module search 'modules/ai-search.bicep' = {
+  name: 'azureAiSearch'
+  params: {
+    location: location
+    searchServiceName: take('${namePrefix}-search', 60)
+    skuName: environment == 'prod' ? 'standard' : 'basic'
+    replicaCount: environment == 'prod' ? 2 : 1
+    tags: commonTags
+  }
+}
+
+module postgresql 'modules/postgresql.bicep' = {
+  name: 'postgresql'
+  params: {
+    location: location
+    serverName: take('${namePrefix}-pg', 63)
+    delegatedSubnetId: network.outputs.postgresqlSubnetId
+    privateDnsZoneId: network.outputs.postgresqlPrivateDnsZoneId
+    skuName: environment == 'prod' ? 'Standard_D2ds_v5' : 'Standard_B1ms'
+    skuTier: environment == 'prod' ? 'GeneralPurpose' : 'Burstable'
+    highAvailability: environment == 'prod'
+    backupRetentionDays: environment == 'prod' ? 35 : 7
+    tags: commonTags
+  }
+}
+
 output environmentName string = environment
 output containerRegistryName string = registry.outputs.name
 output keyVaultName string = vault.outputs.name
 output storageAccountName string = storage.outputs.name
 output applicationInsightsId string = monitoring.outputs.applicationInsightsId
+output azureAiSearchName string = search.outputs.name
+output postgresqlServerName string = postgresql.outputs.name
+output virtualNetworkId string = network.outputs.virtualNetworkId
