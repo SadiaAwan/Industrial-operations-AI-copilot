@@ -137,10 +137,6 @@ module access 'modules/access-control.bicep' = {
   }
 }
 
-resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
-  name: monitoring.outputs.logAnalyticsName
-}
-
 module containerEnvironment 'modules/container-app-environment.bicep' = {
   name: 'containerAppsEnvironment'
   params: {
@@ -148,7 +144,7 @@ module containerEnvironment 'modules/container-app-environment.bicep' = {
     environmentName: take('${namePrefix}-cae', 60)
     infrastructureSubnetId: network.outputs.containerAppsSubnetId
     logAnalyticsCustomerId: monitoring.outputs.logAnalyticsCustomerId
-    logAnalyticsSharedKey: logAnalytics.listKeys().primarySharedKey
+    logAnalyticsSharedKey: monitoring.outputs.logAnalyticsSharedKey
     zoneRedundant: environment == 'prod'
     tags: commonTags
   }
