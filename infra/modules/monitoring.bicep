@@ -44,6 +44,7 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
 }
 
 output logAnalyticsId string = logAnalytics.id
+output logAnalyticsName string = logAnalytics.name
 output logAnalyticsCustomerId string = logAnalytics.properties.customerId
 output applicationInsightsId string = applicationInsights.id
 @secure()
