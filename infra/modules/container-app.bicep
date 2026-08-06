@@ -7,6 +7,12 @@ param appName string
 @description('Container Apps managed environment resource ID.')
 param managedEnvironmentId string
 
+@description('User-assigned managed identity resource ID.')
+param identityResourceId string
+
+@description('Private Azure Container Registry login server.')
+param registryLoginServer string
+
 @description('Immutable container image reference.')
 param image string
 
@@ -35,12 +41,21 @@ resource app 'Microsoft.App/containerApps@2025-01-01' = {
   location: location
   tags: tags
   identity: {
-    type: 'SystemAssigned'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${identityResourceId}': {}
+    }
   }
   properties: {
     managedEnvironmentId: managedEnvironmentId
     configuration: {
       activeRevisionsMode: 'Single'
+      registries: [
+        {
+          server: registryLoginServer
+          identity: identityResourceId
+        }
+      ]
       ingress: {
         allowInsecure: false
         external: true
@@ -114,4 +129,3 @@ resource app 'Microsoft.App/containerApps@2025-01-01' = {
 output fqdn string = app.properties.configuration.ingress.fqdn
 output id string = app.id
 output name string = app.name
-output principalId string = app.identity.principalId

@@ -16,11 +16,15 @@ param workloadName string = 'industrial-ai'
 @description('Azure region for all resources.')
 param location string = resourceGroup().location
 
-@description('Immutable API image reference including digest or version tag.')
-param apiImage string
+@description('Immutable image tag promoted through environments, normally a Git SHA.')
+@minLength(7)
+param imageTag string
 
-@description('Immutable UI image reference including digest or version tag.')
-param uiImage string
+@description('Microsoft Entra object ID for the PostgreSQL administrator group.')
+param postgresqlAdministratorObjectId string
+
+@description('Display name for the PostgreSQL administrator group.')
+param postgresqlAdministratorName string
 
 @description('Common non-sensitive resource tags.')
 param tags object = {}
@@ -109,6 +113,30 @@ module postgresql 'modules/postgresql.bicep' = {
   }
 }
 
+module identities 'modules/managed-identities.bicep' = {
+  name: 'managedIdentities'
+  params: {
+    location: location
+    namePrefix: namePrefix
+    tags: commonTags
+  }
+}
+
+module access 'modules/access-control.bicep' = {
+  name: 'leastPrivilegeAccess'
+  params: {
+    registryName: registry.outputs.name
+    storageAccountName: storage.outputs.name
+    keyVaultName: vault.outputs.name
+    searchServiceName: search.outputs.name
+    postgresqlServerName: postgresql.outputs.name
+    apiPrincipalId: identities.outputs.apiPrincipalId
+    uiPrincipalId: identities.outputs.uiPrincipalId
+    postgresqlAdministratorObjectId: postgresqlAdministratorObjectId
+    postgresqlAdministratorName: postgresqlAdministratorName
+  }
+}
+
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' existing = {
   name: monitoring.outputs.logAnalyticsName
 }
@@ -128,17 +156,26 @@ module containerEnvironment 'modules/container-app-environment.bicep' = {
 
 module api 'modules/container-app.bicep' = {
   name: 'apiContainerApp'
+  dependsOn: [
+    access
+  ]
   params: {
     location: location
     appName: take('${namePrefix}-api', 32)
     managedEnvironmentId: containerEnvironment.outputs.id
-    image: apiImage
+    identityResourceId: identities.outputs.apiResourceId
+    registryLoginServer: registry.outputs.loginServer
+    image: '${registry.outputs.loginServer}/industrial-copilot-api:${imageTag}'
     targetPort: 8000
     healthPath: '/health'
     environmentVariables: [
       {
         name: 'APP_ENVIRONMENT'
         value: environment
+      }
+      {
+        name: 'AZURE_CLIENT_ID'
+        value: identities.outputs.apiClientId
       }
       {
         name: 'AZURE_SEARCH_ENDPOINT'
@@ -165,17 +202,26 @@ module api 'modules/container-app.bicep' = {
 
 module ui 'modules/container-app.bicep' = {
   name: 'uiContainerApp'
+  dependsOn: [
+    access
+  ]
   params: {
     location: location
     appName: take('${namePrefix}-ui', 32)
     managedEnvironmentId: containerEnvironment.outputs.id
-    image: uiImage
+    identityResourceId: identities.outputs.uiResourceId
+    registryLoginServer: registry.outputs.loginServer
+    image: '${registry.outputs.loginServer}/industrial-copilot-ui:${imageTag}'
     targetPort: 8501
     healthPath: '/_stcore/health'
     environmentVariables: [
       {
         name: 'API_BASE_URL'
         value: 'https://${api.outputs.fqdn}'
+      }
+      {
+        name: 'AZURE_CLIENT_ID'
+        value: identities.outputs.uiClientId
       }
       {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
