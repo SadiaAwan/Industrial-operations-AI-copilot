@@ -24,6 +24,8 @@ jobs:
             az bicep install
             az bicep lint --file infra/main.bicep
             az bicep build --file infra/main.bicep --stdout > /dev/null
+            az bicep lint --file infra/subscription.bicep
+            az bicep build --file infra/subscription.bicep --stdout > /dev/null
             for module in infra/modules/*.bicep; do
               az bicep lint --file "$module"
               az bicep build --file "$module" --stdout > /dev/null
