@@ -1,78 +1,37 @@
-name: Plan or deploy development infrastructure
+name: Promote verified images to development
 
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Run what-if only or deploy after what-if
+        description: Generate what-if only or deploy after review
         type: choice
         options: [what-if, deploy]
         default: what-if
-      image_tag:
-        description: Immutable API and UI image tag
+      verified_commit:
+        description: Full Git SHA from the successful image publication
+        required: true
+      publish_run_id:
+        description: Workflow run ID containing the release manifest
+        required: true
+      change_reason:
+        description: Reason for deployment or rollback
         required: true
 
 permissions:
+  actions: read
   contents: read
   id-token: write
 
-concurrency:
-  group: phase-14-development
-  cancel-in-progress: false
-
 jobs:
-  plan-or-deploy:
-    runs-on: ubuntu-latest
-    environment: development
-    timeout-minutes: 30
-    env:
-      IMAGE_TAG: ${{ inputs.image_tag }}
-      POSTGRES_ADMIN_OBJECT_ID: ${{ vars.POSTGRES_ADMIN_OBJECT_ID }}
-      POSTGRES_ADMIN_NAME: ${{ vars.POSTGRES_ADMIN_NAME }}
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Authenticate to Azure with OIDC
-        uses: azure/login@v2
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Review development what-if and optionally deploy
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            set -euo pipefail
-            az deployment sub what-if \
-              --name "phase14-dev-${GITHUB_RUN_ID}" \
-              --location swedencentral \
-              --template-file infra/subscription.bicep \
-              --parameters infra/environments/dev.bicepparam \
-              --parameters imageTag="$IMAGE_TAG" \
-                postgresqlAdministratorObjectId="$POSTGRES_ADMIN_OBJECT_ID" \
-                postgresqlAdministratorName="$POSTGRES_ADMIN_NAME" \
-              --result-format FullResourcePayloads \
-              --no-pretty-print | tee phase14-dev-what-if.txt
-
-            if [ "${{ inputs.mode }}" = "deploy" ]; then
-              az deployment sub create \
-                --name "phase14-dev-${GITHUB_RUN_ID}" \
-                --location swedencentral \
-                --template-file infra/subscription.bicep \
-                --parameters infra/environments/dev.bicepparam \
-                --parameters imageTag="$IMAGE_TAG" \
-                  postgresqlAdministratorObjectId="$POSTGRES_ADMIN_OBJECT_ID" \
-                  postgresqlAdministratorName="$POSTGRES_ADMIN_NAME"
-            fi
-
-      - name: Upload what-if result
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: phase-14-dev-what-if
-          path: phase14-dev-what-if.txt
-          if-no-files-found: error
-          retention-days: 30
+  promote:
+    uses: ./.github/workflows/_promote-azure.yml
+    with:
+      environment: development
+      mode: ${{ inputs.mode }}
+      verified_commit: ${{ inputs.verified_commit }}
+      publish_run_id: ${{ inputs.publish_run_id }}
+      parameter_file: infra/environments/dev.bicepparam
+      resource_group: rg-industrial-ai-dev
+      change_reason: ${{ inputs.change_reason }}
+    secrets: inherit
