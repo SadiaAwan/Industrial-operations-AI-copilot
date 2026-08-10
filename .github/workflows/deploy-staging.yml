@@ -1,0 +1,37 @@
+name: Promote verified images to staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Generate what-if only or request protected deployment
+        type: choice
+        options: [what-if, deploy]
+        default: what-if
+      verified_commit:
+        description: Full Git SHA already verified in development
+        required: true
+      publish_run_id:
+        description: Workflow run ID containing the release manifest
+        required: true
+      change_reason:
+        description: Reason for deployment or rollback
+        required: true
+
+permissions:
+  actions: read
+  contents: read
+  id-token: write
+
+jobs:
+  promote:
+    uses: ./.github/workflows/_promote-azure.yml
+    with:
+      environment: staging
+      mode: ${{ inputs.mode }}
+      verified_commit: ${{ inputs.verified_commit }}
+      publish_run_id: ${{ inputs.publish_run_id }}
+      parameter_file: infra/environments/staging.bicepparam
+      resource_group: rg-industrial-ai-staging
+      change_reason: ${{ inputs.change_reason }}
+    secrets: inherit
