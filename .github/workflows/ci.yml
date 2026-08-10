@@ -9,6 +9,31 @@ permissions:
   contents: read
 
 jobs:
+  bicep-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Lint and compile Bicep
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az bicep install
+            az bicep lint --file infra/main.bicep
+            az bicep build --file infra/main.bicep --stdout > /dev/null
+            az bicep lint --file infra/subscription.bicep
+            az bicep build --file infra/subscription.bicep --stdout > /dev/null
+            for module in infra/modules/*.bicep; do
+              az bicep lint --file "$module"
+              az bicep build --file "$module" --stdout > /dev/null
+            done
+            for parameters in infra/environments/*.bicepparam; do
+              az bicep build-params --file "$parameters" --stdout > /dev/null
+            done
+
   quality-and-evaluation:
     runs-on: ubuntu-latest
     timeout-minutes: 20
