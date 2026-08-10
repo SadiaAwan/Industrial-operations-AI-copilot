@@ -1,98 +1,37 @@
-name: Plan and deploy production infrastructure
+name: Promote verified images to production
 
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Run what-if only or request protected deployment
+        description: Generate what-if only or request protected deployment
         type: choice
         options: [what-if, deploy]
         default: what-if
-      image_tag:
-        description: Immutable image tag previously verified outside production
+      verified_commit:
+        description: Full Git SHA already accepted in staging
+        required: true
+      publish_run_id:
+        description: Workflow run ID containing the release manifest
+        required: true
+      change_reason:
+        description: Approved release or rollback reason
         required: true
 
 permissions:
+  actions: read
   contents: read
   id-token: write
 
-concurrency:
-  group: phase-14-production
-  cancel-in-progress: false
-
-env:
-  IMAGE_TAG: ${{ inputs.image_tag }}
-  POSTGRES_ADMIN_OBJECT_ID: ${{ vars.POSTGRES_ADMIN_OBJECT_ID }}
-  POSTGRES_ADMIN_NAME: ${{ vars.POSTGRES_ADMIN_NAME }}
-
 jobs:
-  what-if:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Authenticate to Azure with OIDC
-        uses: azure/login@v2
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Generate production what-if
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            set -euo pipefail
-            az deployment sub what-if \
-              --name "phase14-prod-${GITHUB_RUN_ID}" \
-              --location swedencentral \
-              --template-file infra/subscription.bicep \
-              --parameters infra/environments/prod.bicepparam \
-              --parameters imageTag="$IMAGE_TAG" \
-                postgresqlAdministratorObjectId="$POSTGRES_ADMIN_OBJECT_ID" \
-                postgresqlAdministratorName="$POSTGRES_ADMIN_NAME" \
-              --result-format FullResourcePayloads \
-              --no-pretty-print | tee phase14-prod-what-if.txt
-
-      - name: Upload production what-if result
-        uses: actions/upload-artifact@v7
-        with:
-          name: phase-14-prod-what-if
-          path: phase14-prod-what-if.txt
-          if-no-files-found: error
-          retention-days: 90
-
-  deploy:
-    if: ${{ inputs.mode == 'deploy' }}
-    needs: what-if
-    runs-on: ubuntu-latest
-    environment: production
-    timeout-minutes: 45
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Authenticate to Azure with OIDC
-        uses: azure/login@v2
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Deploy reviewed production change
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            set -euo pipefail
-            az deployment sub create \
-              --name "phase14-prod-${GITHUB_RUN_ID}" \
-              --location swedencentral \
-              --template-file infra/subscription.bicep \
-              --parameters infra/environments/prod.bicepparam \
-              --parameters imageTag="$IMAGE_TAG" \
-                postgresqlAdministratorObjectId="$POSTGRES_ADMIN_OBJECT_ID" \
-                postgresqlAdministratorName="$POSTGRES_ADMIN_NAME"
+  promote:
+    uses: ./.github/workflows/_promote-azure.yml
+    with:
+      environment: production
+      mode: ${{ inputs.mode }}
+      verified_commit: ${{ inputs.verified_commit }}
+      publish_run_id: ${{ inputs.publish_run_id }}
+      parameter_file: infra/environments/prod.bicepparam
+      resource_group: rg-industrial-ai-prod
+      change_reason: ${{ inputs.change_reason }}
+    secrets: inherit
