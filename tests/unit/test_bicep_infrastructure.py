@@ -77,10 +77,13 @@ def test_rbac_uses_only_expected_data_plane_roles() -> None:
 
 
 def test_production_deploy_requires_what_if_and_environment_gate() -> None:
-    workflow = Path(".github/workflows/deploy-prod.yml").read_text(encoding="utf-8")
+    entrypoint = Path(".github/workflows/deploy-prod.yml").read_text(encoding="utf-8")
+    workflow = Path(".github/workflows/_promote-azure.yml").read_text(encoding="utf-8")
 
     assert "az deployment sub what-if" in workflow
-    assert "needs: what-if" in workflow
-    assert "environment: production" in workflow
-    assert "uses: azure/login@v2" in workflow
+    assert "needs: plan" in workflow
+    assert "environment: ${{ inputs.environment }}" in workflow
+    assert "uses: azure/login@" in workflow
+    assert "environment: production" in entrypoint
+    assert "uses: ./.github/workflows/_promote-azure.yml" in entrypoint
     assert "password" not in workflow.casefold()

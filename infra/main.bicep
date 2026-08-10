@@ -16,9 +16,11 @@ param workloadName string = 'industrial-ai'
 @description('Azure region for all resources.')
 param location string = resourceGroup().location
 
-@description('Immutable image tag promoted through environments, normally a Git SHA.')
-@minLength(7)
-param imageTag string
+@description('Full immutable API image reference using an ACR SHA-256 digest.')
+param apiImageReference string
+
+@description('Full immutable UI image reference using an ACR SHA-256 digest.')
+param uiImageReference string
 
 @description('Microsoft Entra object ID for the PostgreSQL administrator group.')
 param postgresqlAdministratorObjectId string
@@ -161,13 +163,17 @@ module api 'modules/container-app.bicep' = {
     managedEnvironmentId: containerEnvironment.outputs.id
     identityResourceId: identities.outputs.apiResourceId
     registryLoginServer: registry.outputs.loginServer
-    image: '${registry.outputs.loginServer}/industrial-copilot-api:${imageTag}'
+    image: apiImageReference
     targetPort: 8000
     healthPath: '/health'
     environmentVariables: [
       {
         name: 'APP_ENVIRONMENT'
         value: environment
+      }
+      {
+        name: 'CONTAINER_IMAGE'
+        value: apiImageReference
       }
       {
         name: 'AZURE_CLIENT_ID'
@@ -207,13 +213,17 @@ module ui 'modules/container-app.bicep' = {
     managedEnvironmentId: containerEnvironment.outputs.id
     identityResourceId: identities.outputs.uiResourceId
     registryLoginServer: registry.outputs.loginServer
-    image: '${registry.outputs.loginServer}/industrial-copilot-ui:${imageTag}'
+    image: uiImageReference
     targetPort: 8501
     healthPath: '/_stcore/health'
     environmentVariables: [
       {
-        name: 'API_BASE_URL'
+        name: 'COPILOT_UI_API_BASE_URL'
         value: 'https://${api.outputs.fqdn}'
+      }
+      {
+        name: 'CONTAINER_IMAGE'
+        value: uiImageReference
       }
       {
         name: 'AZURE_CLIENT_ID'
@@ -239,4 +249,6 @@ output azureAiSearchName string = search.outputs.name
 output postgresqlServerName string = postgresql.outputs.name
 output virtualNetworkId string = network.outputs.virtualNetworkId
 output apiFqdn string = api.outputs.fqdn
+output apiName string = api.outputs.name
 output uiFqdn string = ui.outputs.fqdn
+output uiName string = ui.outputs.name

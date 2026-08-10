@@ -29,8 +29,8 @@ Resource groups are fixed by the reviewed parameter files:
 | Production | `rg-industrial-ai-prod` |
 
 Parameter files contain no credentials. The zero GUID, placeholder administrator
-name, and placeholder image tag are intentionally overridden by the deployment
-workflow. Deployments must fail rather than use these placeholders.
+name, and placeholder image references are intentionally overridden by the
+deployment workflow. Deployments must fail rather than use these placeholders.
 
 ## GitHub configuration
 
@@ -39,6 +39,9 @@ Configure these repository or environment variables:
 - `AZURE_CLIENT_ID`: federated deployment identity application/client ID;
 - `AZURE_TENANT_ID`: Microsoft Entra tenant ID;
 - `AZURE_SUBSCRIPTION_ID`: target Azure subscription;
+- `AZURE_CONTAINER_REGISTRY_NAME`: ACR receiving the selected environment;
+- `AZURE_SOURCE_CONTAINER_REGISTRY_NAME`: development ACR containing the
+  originally verified images; this may equal the target registry in development;
 - `POSTGRES_ADMIN_OBJECT_ID`: object ID of a dedicated database-admin group;
 - `POSTGRES_ADMIN_NAME`: display name of that group.
 
@@ -46,9 +49,10 @@ Azure authentication uses GitHub OIDC. Do not create a client secret. Give the
 deployment identity only the permissions needed to deploy the declared resource
 types and role assignments at the target scope.
 
-Configure the GitHub `production` environment with required reviewers. Production
-images must use the same immutable Git SHA tag that passed development/staging
-verification.
+Configure the GitHub `staging` and `production` environments with required
+reviewers. Promotion accepts only a retained release manifest produced after a
+successful `main` CI run. Images are imported between registries without rebuild
+and deployed by their SHA-256 repository digests.
 
 ## Validation and what-if
 
@@ -66,10 +70,10 @@ The CI workflow repeats module and parameter compilation for every file. Static
 tests reject secrets, broad role names, local authentication, shared storage keys,
 public blobs, and missing environment isolation.
 
-Run `deploy-dev.yml` in `what-if` mode first. Download and review the retained
-what-if artifact before selecting deploy mode. For production, `deploy-prod.yml`
-always creates and uploads a what-if artifact before the protected deployment job
-can be approved.
+Run `deploy-dev.yml` in `what-if` mode first with the full verified commit SHA and
+the publication workflow run ID. Download and review the retained what-if artifact
+before selecting deploy mode. Promote the same commit and publication run through
+`deploy-staging.yml` and then `deploy-prod.yml`; do not substitute another artifact.
 
 Review the what-if for unexpected deletes, replacement of stateful resources,
 public-network changes, role-scope expansion, SKU changes, and changes outside the
@@ -95,6 +99,16 @@ database role for the API identity; the API must not run as the Entra administra
 ## Rollback
 
 Container Apps use single-revision traffic with retained inactive revisions. Roll
-back by redeploying the last approved immutable image tag. Database and network
-resource replacement requires an explicit recovery plan and must never be approved
-solely because a template compiles.
+back application code by invoking the environment workflow with the commit and
+publication run ID from the last approved deployment evidence artifact. This
+redeploys the prior API and UI digests without rebuilding them.
+
+Alembic migrations are applied forward with `alembic upgrade head` after the
+reviewed deployment. Application releases must keep migrations backward compatible
+with the previous image. Database downgrades are never automatic: a stateful schema
+rollback requires an approved recovery plan, verified backup, and a separately
+reviewed operator action.
+
+Every successful deployment uploads evidence containing the environment, reason,
+commit, exact image digests, and Azure deployment output. Retain this artifact for
+release audit and rollback selection.

@@ -17,8 +17,11 @@ param workloadName string
 @description('Azure region for the resource group and workload.')
 param location string
 
-@description('Immutable image tag, normally a Git SHA.')
-param imageTag string
+@description('Full immutable API image reference using an ACR SHA-256 digest.')
+param apiImageReference string
+
+@description('Full immutable UI image reference using an ACR SHA-256 digest.')
+param uiImageReference string
 
 @description('Microsoft Entra object ID for the PostgreSQL administrator group.')
 param postgresqlAdministratorObjectId string
@@ -46,7 +49,8 @@ module application 'main.bicep' = {
     environment: environment
     workloadName: workloadName
     location: location
-    imageTag: imageTag
+    apiImageReference: apiImageReference
+    uiImageReference: uiImageReference
     postgresqlAdministratorObjectId: postgresqlAdministratorObjectId
     postgresqlAdministratorName: postgresqlAdministratorName
     tags: tags
@@ -54,5 +58,7 @@ module application 'main.bicep' = {
 }
 
 output apiFqdn string = application.outputs.apiFqdn
+output apiName string = application.outputs.apiName
 output resourceGroupId string = environmentResourceGroup.id
 output uiFqdn string = application.outputs.uiFqdn
+output uiName string = application.outputs.uiName
