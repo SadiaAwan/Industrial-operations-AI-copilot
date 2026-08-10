@@ -1,0 +1,261 @@
+name: Reusable verified Azure promotion
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      mode:
+        type: string
+        required: true
+      verified_commit:
+        type: string
+        required: true
+      publish_run_id:
+        type: string
+        required: true
+      parameter_file:
+        type: string
+        required: true
+      resource_group:
+        type: string
+        required: true
+      change_reason:
+        type: string
+        required: true
+
+permissions:
+  actions: read
+  contents: read
+  id-token: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    timeout-minutes: 30
+    outputs:
+      api_image: ${{ steps.images.outputs.api_image }}
+      ui_image: ${{ steps.images.outputs.ui_image }}
+
+    steps:
+      - name: Check out deployment source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.verified_commit }}
+
+      - name: Download verified release manifest
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-manifest-${{ inputs.verified_commit }}
+          path: release-evidence
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.publish_run_id }}
+
+      - name: Authenticate to Azure with OIDC
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve source and target registries
+        id: registries
+        shell: bash
+        env:
+          SOURCE_REGISTRY_NAME: ${{ vars.AZURE_SOURCE_CONTAINER_REGISTRY_NAME || vars.AZURE_CONTAINER_REGISTRY_NAME }}
+          TARGET_REGISTRY_NAME: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
+        run: |
+          set -euo pipefail
+          source_login="$(az acr show --name "$SOURCE_REGISTRY_NAME" --query loginServer --output tsv)"
+          target_login="$(az acr show --name "$TARGET_REGISTRY_NAME" --query loginServer --output tsv)"
+          test -n "$source_login"
+          test -n "$target_login"
+          echo "source_login=$source_login" >> "$GITHUB_OUTPUT"
+          echo "target_login=$target_login" >> "$GITHUB_OUTPUT"
+
+      - name: Validate immutable release evidence
+        id: manifest
+        run: >-
+          python scripts/validate_release_manifest.py
+          --manifest release-evidence/release-manifest.json
+          --expected-commit "${{ inputs.verified_commit }}"
+          --expected-registry "${{ steps.registries.outputs.source_login }}"
+
+      - name: Resolve target digest references
+        id: images
+        shell: bash
+        env:
+          API_SOURCE: ${{ steps.manifest.outputs.api_image }}
+          UI_SOURCE: ${{ steps.manifest.outputs.ui_image }}
+          TARGET_LOGIN: ${{ steps.registries.outputs.target_login }}
+        run: |
+          set -euo pipefail
+          echo "api_image=$TARGET_LOGIN/industrial-copilot-api@${API_SOURCE#*@}" >> "$GITHUB_OUTPUT"
+          echo "ui_image=$TARGET_LOGIN/industrial-copilot-ui@${UI_SOURCE#*@}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate reviewed infrastructure plan
+        shell: bash
+        env:
+          API_IMAGE: ${{ steps.images.outputs.api_image }}
+          UI_IMAGE: ${{ steps.images.outputs.ui_image }}
+          POSTGRES_ADMIN_OBJECT_ID: ${{ vars.POSTGRES_ADMIN_OBJECT_ID }}
+          POSTGRES_ADMIN_NAME: ${{ vars.POSTGRES_ADMIN_NAME }}
+        run: |
+          set -euo pipefail
+          az deployment sub what-if \
+            --name "phase15-plan-${GITHUB_RUN_ID}" \
+            --location swedencentral \
+            --template-file infra/subscription.bicep \
+            --parameters "${{ inputs.parameter_file }}" \
+            --parameters apiImageReference="$API_IMAGE" \
+              uiImageReference="$UI_IMAGE" \
+              postgresqlAdministratorObjectId="$POSTGRES_ADMIN_OBJECT_ID" \
+              postgresqlAdministratorName="$POSTGRES_ADMIN_NAME" \
+            --result-format FullResourcePayloads \
+            --no-pretty-print | tee azure-what-if.txt
+
+      - name: Upload reviewed infrastructure plan
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: azure-what-if-${{ inputs.environment }}-${{ inputs.verified_commit }}
+          path: azure-what-if.txt
+          if-no-files-found: error
+          retention-days: 90
+
+  deploy:
+    if: ${{ inputs.mode == 'deploy' }}
+    needs: plan
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out verified deployment source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.verified_commit }}
+
+      - name: Download verified release manifest
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-manifest-${{ inputs.verified_commit }}
+          path: release-evidence
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.publish_run_id }}
+
+      - name: Authenticate to Azure with OIDC
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve and validate source images
+        id: source
+        shell: bash
+        env:
+          SOURCE_REGISTRY_NAME: ${{ vars.AZURE_SOURCE_CONTAINER_REGISTRY_NAME || vars.AZURE_CONTAINER_REGISTRY_NAME }}
+        run: |
+          set -euo pipefail
+          source_login="$(az acr show --name "$SOURCE_REGISTRY_NAME" --query loginServer --output tsv)"
+          echo "registry_name=$SOURCE_REGISTRY_NAME" >> "$GITHUB_OUTPUT"
+          echo "login_server=$source_login" >> "$GITHUB_OUTPUT"
+
+      - name: Validate release manifest again before mutation
+        id: manifest
+        run: >-
+          python scripts/validate_release_manifest.py
+          --manifest release-evidence/release-manifest.json
+          --expected-commit "${{ inputs.verified_commit }}"
+          --expected-registry "${{ steps.source.outputs.login_server }}"
+
+      - name: Promote verified images into target ACR
+        id: images
+        shell: bash
+        env:
+          API_SOURCE: ${{ steps.manifest.outputs.api_image }}
+          UI_SOURCE: ${{ steps.manifest.outputs.ui_image }}
+          SOURCE_REGISTRY_NAME: ${{ steps.source.outputs.registry_name }}
+          TARGET_REGISTRY_NAME: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
+        run: |
+          set -euo pipefail
+          target_login="$(az acr show --name "$TARGET_REGISTRY_NAME" --query loginServer --output tsv)"
+          if [ "$SOURCE_REGISTRY_NAME" != "$TARGET_REGISTRY_NAME" ]; then
+            az acr import --name "$TARGET_REGISTRY_NAME" --source "$API_SOURCE" \
+              --image "industrial-copilot-api:${{ inputs.verified_commit }}" --force
+            az acr import --name "$TARGET_REGISTRY_NAME" --source "$UI_SOURCE" \
+              --image "industrial-copilot-ui:${{ inputs.verified_commit }}" --force
+          fi
+          api_image="$target_login/industrial-copilot-api@${API_SOURCE#*@}"
+          ui_image="$target_login/industrial-copilot-ui@${UI_SOURCE#*@}"
+          echo "api_image=$api_image" >> "$GITHUB_OUTPUT"
+          echo "ui_image=$ui_image" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy reviewed digest references
+        shell: bash
+        env:
+          API_IMAGE: ${{ steps.images.outputs.api_image }}
+          UI_IMAGE: ${{ steps.images.outputs.ui_image }}
+          POSTGRES_ADMIN_OBJECT_ID: ${{ vars.POSTGRES_ADMIN_OBJECT_ID }}
+          POSTGRES_ADMIN_NAME: ${{ vars.POSTGRES_ADMIN_NAME }}
+        run: |
+          set -euo pipefail
+          az deployment sub create \
+            --name "phase15-deploy-${GITHUB_RUN_ID}" \
+            --location swedencentral \
+            --template-file infra/subscription.bicep \
+            --parameters "${{ inputs.parameter_file }}" \
+            --parameters apiImageReference="$API_IMAGE" \
+              uiImageReference="$UI_IMAGE" \
+              postgresqlAdministratorObjectId="$POSTGRES_ADMIN_OBJECT_ID" \
+              postgresqlAdministratorName="$POSTGRES_ADMIN_NAME" \
+            --output json > azure-deployment.json
+
+      - name: Apply forward database migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          api_name="$(jq -r '.properties.outputs.apiName.value' azure-deployment.json)"
+          az containerapp exec \
+            --resource-group "${{ inputs.resource_group }}" \
+            --name "$api_name" \
+            --command "alembic upgrade head"
+
+      - name: Verify deployed liveness
+        shell: bash
+        run: |
+          set -euo pipefail
+          api_fqdn="$(jq -r '.properties.outputs.apiFqdn.value' azure-deployment.json)"
+          ui_fqdn="$(jq -r '.properties.outputs.uiFqdn.value' azure-deployment.json)"
+          curl --fail --retry 12 --retry-all-errors --retry-delay 5 \
+            "https://$api_fqdn/health"
+          curl --fail --retry 12 --retry-all-errors --retry-delay 5 \
+            "https://$ui_fqdn/_stcore/health"
+
+      - name: Record deployment evidence
+        shell: bash
+        env:
+          CHANGE_REASON: ${{ inputs.change_reason }}
+        run: |
+          set -euo pipefail
+          jq -n \
+            --arg environment "${{ inputs.environment }}" \
+            --arg commit "${{ inputs.verified_commit }}" \
+            --arg reason "$CHANGE_REASON" \
+            --arg apiImage "${{ steps.images.outputs.api_image }}" \
+            --arg uiImage "${{ steps.images.outputs.ui_image }}" \
+            --slurpfile deployment azure-deployment.json \
+            '{environment: $environment, commit: $commit, reason: $reason, apiImage: $apiImage, uiImage: $uiImage, deployment: $deployment[0]}' \
+            > deployment-evidence.json
+
+      - name: Upload deployment evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: deployment-${{ inputs.environment }}-${{ inputs.verified_commit }}
+          path: deployment-evidence.json
+          if-no-files-found: error
+          retention-days: 90
