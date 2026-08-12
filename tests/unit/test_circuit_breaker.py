@@ -25,9 +25,7 @@ def test_circuit_opens_at_threshold_and_blocks_calls() -> None:
 def test_half_open_probe_recovers_after_success() -> None:
     now = 10.0
     breaker = CircuitBreaker(
-        CircuitBreakerPolicy(
-            failure_threshold=1, recovery_timeout_seconds=5
-        ),
+        CircuitBreakerPolicy(failure_threshold=1, recovery_timeout_seconds=5),
         clock=lambda: now,
     )
     breaker.record_failure()
@@ -43,9 +41,7 @@ def test_half_open_probe_recovers_after_success() -> None:
 def test_failed_half_open_probe_reopens_circuit() -> None:
     now = 10.0
     breaker = CircuitBreaker(
-        CircuitBreakerPolicy(
-            failure_threshold=1, recovery_timeout_seconds=5
-        ),
+        CircuitBreakerPolicy(failure_threshold=1, recovery_timeout_seconds=5),
         clock=lambda: now,
     )
     breaker.record_failure()
