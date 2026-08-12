@@ -44,9 +44,7 @@ async def call_with_fallback[T](
                 pass
 
     try:
-        value = await asyncio.wait_for(
-            fallback(), timeout=fallback_timeout_seconds
-        )
+        value = await asyncio.wait_for(fallback(), timeout=fallback_timeout_seconds)
         return FallbackResult(value=value, degraded=True, source="fallback")
     except asyncio.CancelledError:
         raise
