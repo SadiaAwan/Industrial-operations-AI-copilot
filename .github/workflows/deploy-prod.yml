@@ -14,6 +14,9 @@ on:
       publish_run_id:
         description: Workflow run ID containing the release manifest
         required: true
+      staging_acceptance_run_id:
+        description: Workflow run ID containing accepted staging evidence
+        required: true
       change_reason:
         description: Approved release or rollback reason
         required: true
@@ -24,7 +27,32 @@ permissions:
   id-token: write
 
 jobs:
+  staging-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out verified source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.verified_commit }}
+
+      - name: Download staging acceptance evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: staging-acceptance-${{ inputs.verified_commit }}
+          path: staging-acceptance
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.staging_acceptance_run_id }}
+
+      - name: Enforce staging acceptance gate
+        run: >-
+          python scripts/verify_staging_acceptance.py
+          --evidence staging-acceptance/staging-acceptance.json
+          --expected-commit "${{ inputs.verified_commit }}"
+
   promote:
+    needs: staging-readiness
     uses: ./.github/workflows/_promote-azure.yml
     with:
       environment: production
