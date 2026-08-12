@@ -77,6 +77,5 @@ class CircuitBreaker:
 
     def _recovery_elapsed(self) -> bool:
         return self._opened_at is not None and (
-            self._clock() - self._opened_at
-            >= self.policy.recovery_timeout_seconds
+            self._clock() - self._opened_at >= self.policy.recovery_timeout_seconds
         )
