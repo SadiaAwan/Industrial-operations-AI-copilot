@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Sequence
+from datetime import datetime
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -34,6 +35,11 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--baseline-report", type=Path)
     parser.add_argument("--regression-tolerance", type=float, default=0.0)
     parser.add_argument("--track-mlflow", action="store_true")
+    parser.add_argument(
+        "--generated-at",
+        type=datetime.fromisoformat,
+        help="Fixed ISO-8601 UTC timestamp for a reproducible report artifact.",
+    )
     return parser
 
 
@@ -59,6 +65,7 @@ def main(arguments: Sequence[str] | None = None) -> int:
             dataset,
             fingerprint,
             thresholds=_load_thresholds(options.thresholds),
+            generated_at=options.generated_at,
         )
         write_report(report, options.output)
         tracker = (
