@@ -51,9 +51,7 @@ async def run_with_retry[T](
 
     for attempt in range(1, policy.max_attempts + 1):
         try:
-            result = await asyncio.wait_for(
-                operation(), timeout=policy.timeout_seconds
-            )
+            result = await asyncio.wait_for(operation(), timeout=policy.timeout_seconds)
             return result, attempt
         except BaseException as error:
             if (
