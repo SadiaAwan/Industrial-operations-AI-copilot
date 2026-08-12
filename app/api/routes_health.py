@@ -22,8 +22,7 @@ async def ready(
 ) -> ReadinessResponse:
     dependencies = await services.readiness.check()
     is_ready = all(
-        item.status != "unavailable" or not item.required
-        for item in dependencies
+        item.status != "unavailable" or not item.required for item in dependencies
     )
     if not is_ready:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
