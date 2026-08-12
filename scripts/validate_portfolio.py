@@ -65,8 +65,9 @@ def validate() -> list[str]:
                 )
         for pattern in SECRET_PATTERNS:
             if pattern.search(content):
+                relative_document = document.relative_to(ROOT)
                 errors.append(
-                    f"possible secret in {document.relative_to(ROOT)}: {pattern.pattern}"
+                    f"possible secret in {relative_document}: {pattern.pattern}"
                 )
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
