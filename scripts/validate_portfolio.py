@@ -48,7 +48,9 @@ def validate() -> list[str]:
     errors: list[str] = []
     for required in REQUIRED_FILES:
         if not required.exists():
-            errors.append(f"missing required portfolio file: {required.relative_to(ROOT)}")
+            errors.append(
+                f"missing required portfolio file: {required.relative_to(ROOT)}"
+            )
 
     documents = [ROOT / "README.md", *sorted(PORTFOLIO.rglob("*.md"))]
     for document in documents:
