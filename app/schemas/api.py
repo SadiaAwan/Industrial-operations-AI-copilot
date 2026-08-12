@@ -27,7 +27,8 @@ class MachineStatusResponse(DomainModel):
 
 class DependencyStatus(DomainModel):
     name: str = Field(min_length=1)
-    status: Literal["ready", "unavailable"]
+    status: Literal["ready", "degraded", "unavailable"]
+    required: bool = True
 
 
 class HealthResponse(DomainModel):

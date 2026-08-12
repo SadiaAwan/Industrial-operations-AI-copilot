@@ -21,7 +21,9 @@ async def ready(
     services: Annotated[CoreServices, Depends(get_core_services)],
 ) -> ReadinessResponse:
     dependencies = await services.readiness.check()
-    is_ready = all(item.status == "ready" for item in dependencies)
+    is_ready = all(
+        item.status != "unavailable" or not item.required for item in dependencies
+    )
     if not is_ready:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     return ReadinessResponse(
