@@ -1,0 +1,149 @@
+name: Phase 17 staging acceptance
+
+on:
+  workflow_dispatch:
+    inputs:
+      verified_commit:
+        description: Full Git SHA deployed to staging
+        required: true
+      deployment_run_id:
+        description: Staging deployment run containing deployment evidence
+        required: true
+      operator_accepted:
+        description: Operator completed the acceptance checklist
+        type: boolean
+        default: false
+      rollback_rehearsed:
+        description: Prior verified revision was restored and current revision reapplied
+        type: boolean
+        default: false
+
+permissions:
+  actions: read
+  contents: read
+  id-token: write
+
+concurrency:
+  group: phase-17-staging-acceptance
+  cancel-in-progress: false
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out verified source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ inputs.verified_commit }}
+
+      - name: Download staging deployment evidence
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: deployment-staging-${{ inputs.verified_commit }}
+          path: deployment-evidence
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.deployment_run_id }}
+
+      - name: Authenticate to Azure with OIDC
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resolve deployed resources
+        id: resources
+        shell: bash
+        run: |
+          set -euo pipefail
+          deployment="deployment-evidence/deployment-evidence.json"
+          test "$(jq -r '.environment' "$deployment")" = "staging"
+          test "$(jq -r '.commit' "$deployment")" = "${{ inputs.verified_commit }}"
+          echo "api_image=$(jq -r '.apiImage' "$deployment")" >> "$GITHUB_OUTPUT"
+          echo "ui_image=$(jq -r '.uiImage' "$deployment")" >> "$GITHUB_OUTPUT"
+          echo "api_fqdn=$(jq -r '.deployment.properties.outputs.apiFqdn.value' "$deployment")" >> "$GITHUB_OUTPUT"
+          echo "ui_fqdn=$(jq -r '.deployment.properties.outputs.uiFqdn.value' "$deployment")" >> "$GITHUB_OUTPUT"
+          echo "api_name=$(jq -r '.deployment.properties.outputs.apiName.value' "$deployment")" >> "$GITHUB_OUTPUT"
+
+      - name: Verify health and readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --retry 12 --retry-all-errors --retry-delay 5 \
+            "https://${{ steps.resources.outputs.api_fqdn }}/health"
+          curl --fail --retry 12 --retry-all-errors --retry-delay 5 \
+            "https://${{ steps.resources.outputs.api_fqdn }}/ready" | tee readiness.json
+          test "$(jq -r '.status' readiness.json)" = "ready"
+          curl --fail --retry 12 --retry-all-errors --retry-delay 5 \
+            "https://${{ steps.resources.outputs.ui_fqdn }}/_stcore/health"
+
+      - name: Verify database migration and seed
+        shell: bash
+        run: |
+          set -euo pipefail
+          az containerapp exec --resource-group rg-industrial-ai-staging \
+            --name "${{ steps.resources.outputs.api_name }}" \
+            --command "alembic current --check-heads"
+          az containerapp exec --resource-group rg-industrial-ai-staging \
+            --name "${{ steps.resources.outputs.api_name }}" \
+            --command "python -m scripts.seed_database"
+
+      - name: Reindex approved documents
+        shell: bash
+        run: |
+          set -euo pipefail
+          az containerapp exec --resource-group rg-industrial-ai-staging \
+            --name "${{ steps.resources.outputs.api_name }}" \
+            --command "python -m scripts.index_documents --target azure"
+
+      - name: Run release evaluation in staging image
+        shell: bash
+        run: |
+          set -euo pipefail
+          az containerapp exec --resource-group rg-industrial-ai-staging \
+            --name "${{ steps.resources.outputs.api_name }}" \
+            --command "python -m scripts.run_evaluation --output /tmp/staging-evaluation.json"
+
+      - name: Verify monitoring resources and least privilege
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(az monitor app-insights component list --resource-group rg-industrial-ai-staging --query 'length(@)' --output tsv)" -ge 1
+          test "$(az monitor log-analytics workspace list --resource-group rg-industrial-ai-staging --query 'length(@)' --output tsv)" -ge 1
+          broad_roles="$(az role assignment list --resource-group rg-industrial-ai-staging --query "[?contains(roleDefinitionName, 'Owner') || contains(roleDefinitionName, 'Contributor')] | length(@)" --output tsv)"
+          test "$broad_roles" -eq 0
+
+      - name: Require manual rehearsal confirmations
+        shell: bash
+        run: |
+          test "${{ inputs.operator_accepted }}" = "true"
+          test "${{ inputs.rollback_rehearsed }}" = "true"
+
+      - name: Create staging acceptance evidence
+        shell: bash
+        run: |
+          jq -n \
+            --arg commit "${{ inputs.verified_commit }}" \
+            --arg apiImage "${{ steps.resources.outputs.api_image }}" \
+            --arg uiImage "${{ steps.resources.outputs.ui_image }}" \
+            --arg runUrl "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --arg deploymentUrl "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ inputs.deployment_run_id }}" \
+            --arg actor "${{ github.actor }}" \
+            --arg completedAt "$(date --utc +%Y-%m-%dT%H:%M:%SZ)" \
+            '{environment:"staging",commit:$commit,api_image:$apiImage,ui_image:$uiImage,checks:{api_health:true,api_readiness:true,ui_health:true,database_migration:true,document_index:true,evaluation_gate:true,observability:true,least_privilege:true,rollback_rehearsal:true,operator_acceptance:true},evidence_urls:{acceptance_run:$runUrl,deployment_run:$deploymentUrl},approved_by:$actor,completed_at:$completedAt}' \
+            > staging-acceptance.json
+          python scripts/verify_staging_acceptance.py \
+            --evidence staging-acceptance.json \
+            --expected-commit "${{ inputs.verified_commit }}"
+
+      - name: Upload staging acceptance evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: staging-acceptance-${{ inputs.verified_commit }}
+          path: staging-acceptance.json
+          if-no-files-found: error
+          retention-days: 90
