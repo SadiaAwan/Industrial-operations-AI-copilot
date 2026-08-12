@@ -50,10 +50,7 @@ def test_cache_outage_becomes_miss_and_does_not_block_core_flow() -> None:
     cache = FailOpenCache(FailingCacheBackend())
 
     assert asyncio.run(cache.get("machine:P-104")) is None
-    assert (
-        asyncio.run(cache.set("machine:P-104", b"safe", ttl_seconds=30))
-        is False
-    )
+    assert asyncio.run(cache.set("machine:P-104", b"safe", ttl_seconds=30)) is False
 
 
 def test_primary_failure_uses_bounded_degraded_fallback() -> None:
@@ -117,9 +114,7 @@ def test_tool_retries_finish_with_safe_error() -> None:
     async def no_sleep(delay: float) -> None:
         assert delay >= 0
 
-    executor = ToolExecutor(
-        policy=ToolPolicy(max_attempts=3), sleep=no_sleep
-    )
+    executor = ToolExecutor(policy=ToolPolicy(max_attempts=3), sleep=no_sleep)
 
     async def unavailable() -> str:
         nonlocal attempts
@@ -130,21 +125,15 @@ def test_tool_retries_finish_with_safe_error() -> None:
 
     assert attempts == 3
     assert result.error is not None
-    assert result.error.message == (
-        "incidents dependency is temporarily unavailable"
-    )
+    assert result.error.message == ("incidents dependency is temporarily unavailable")
 
 
 def test_optional_dependency_outage_keeps_application_ready() -> None:
     readiness = StaticReadiness(
         (
             DependencyStatus(name="database", status="ready"),
-            DependencyStatus(
-                name="cache", status="unavailable", required=False
-            ),
-            DependencyStatus(
-                name="observability", status="degraded", required=False
-            ),
+            DependencyStatus(name="cache", status="unavailable", required=False),
+            DependencyStatus(name="observability", status="degraded", required=False),
         )
     )
     client = TestClient(create_app(services=services_with_readiness(readiness)))
