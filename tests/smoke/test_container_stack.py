@@ -79,7 +79,7 @@ def test_local_stack_starts_non_root_and_ui_reaches_api(
         "http://127.0.0.1:8501/_stcore/health", timeout=5
     ) as response:
         assert response.status == 200
-    with urllib.request.urlopen("http://127.0.0.1:5000/health", timeout=5) as response:
+    with urllib.request.urlopen("http://127.0.0.1:5001/health", timeout=5) as response:
         assert response.status == 200
 
     assert run_compose("exec", "-T", "api", "id", "-u").stdout.strip() == "10001"
