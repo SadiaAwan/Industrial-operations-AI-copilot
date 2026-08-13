@@ -70,6 +70,11 @@ class FakeChatService:
 
 
 class FakeMachineService:
+    async def list(self) -> tuple[Machine, ...]:
+        status = await self.status("P-104")
+        assert status is not None
+        return (status.machine,)
+
     async def status(self, machine_id: str) -> MachineStatusResponse | None:
         if machine_id != "P-104":
             return None

@@ -18,7 +18,13 @@ class FrontendSettings(BaseSettings):
 
     api_base_url: str = "http://localhost:8000"
     api_timeout_seconds: float = Field(default=20.0, gt=0, le=120)
-    machine_ids: Annotated[tuple[str, ...], NoDecode] = ("P-104", "P-205", "P-307")
+    machine_ids: Annotated[tuple[str, ...], NoDecode] = (
+        "P-101",
+        "P-102",
+        "P-103",
+        "P-104",
+        "P-105",
+    )
 
     @field_validator("machine_ids", mode="before")
     @classmethod

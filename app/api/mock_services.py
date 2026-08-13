@@ -7,10 +7,20 @@ from datetime import UTC, datetime
 from uuid import uuid4
 
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
+from app.agent.model import DeterministicRecommendationGenerator, RecommendationContext
+from app.agent.routing import classify_intent
 from app.api.dependencies import CoreServices
 from app.config import Settings
-from app.database.session import create_database_engine
+from app.database.models import MachineModel
+from app.database.repositories import (
+    IncidentRepository,
+    MachineRepository,
+    MaintenanceRepository,
+    SensorReadingRepository,
+)
+from app.database.session import create_database_engine, create_session_factory
 from app.domain.common import MachineStatus, SessionStatus, Severity
 from app.domain.feedback import AgentFeedback
 from app.domain.machine import Machine
@@ -20,26 +30,48 @@ from app.schemas.api import DependencyStatus, MachineStatusResponse
 from app.schemas.chat import ChatRequest, ChatResponse, ChatStreamEvent
 from app.schemas.feedback import FeedbackCreate, FeedbackResponse
 from app.schemas.recommendations import AgentRecommendation, RecommendedCheck
+from app.schemas.tools import (
+    IncidentOutput,
+    MaintenanceRecordOutput,
+    SensorReadingOutput,
+)
 
 PROMPT_SHA256 = "e45959a50682bc17822873a90070a9dcb08208b935415f4aa1ad1aed0e26abeb"
 MACHINES = {
-    "P-104": Machine(
-        machine_id="P-104",
-        name="Cooling Water Pump",
+    "P-101": Machine(
+        machine_id="P-101",
+        name="Cooling Water Pump 1",
         machine_type="centrifugal_pump",
         status=MachineStatus.ACTIVE,
+        location="Utilities / Cooling loop A",
     ),
-    "P-205": Machine(
-        machine_id="P-205",
-        name="Process Transfer Pump",
+    "P-102": Machine(
+        machine_id="P-102",
+        name="Process Feed Pump 2",
         machine_type="centrifugal_pump",
         status=MachineStatus.ACTIVE,
+        location="Process Area / Feed train",
     ),
-    "P-307": Machine(
-        machine_id="P-307",
-        name="Boiler Feed Pump",
+    "P-103": Machine(
+        machine_id="P-103",
+        name="Transfer Pump 3",
         machine_type="centrifugal_pump",
         status=MachineStatus.MAINTENANCE,
+        location="Tank Farm / Transfer line",
+    ),
+    "P-104": Machine(
+        machine_id="P-104",
+        name="Cooling Water Pump 4",
+        machine_type="centrifugal_pump",
+        status=MachineStatus.ACTIVE,
+        location="Utilities / Cooling loop B",
+    ),
+    "P-105": Machine(
+        machine_id="P-105",
+        name="Booster Pump 5",
+        machine_type="centrifugal_pump",
+        status=MachineStatus.ACTIVE,
+        location="Distribution / Booster station",
     ),
 }
 
@@ -50,6 +82,73 @@ class MockRuntime:
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
         self._sessions: dict[str, AgentSession] = {}
+        self._engine = create_database_engine(settings)
+        self._session_factory = create_session_factory(self._engine)
+        self._generator = DeterministicRecommendationGenerator()
+
+    @staticmethod
+    def _machine(row: MachineModel) -> Machine:
+        return Machine.model_validate(
+            {
+                "machine_id": row.machine_id,
+                "name": row.name,
+                "machine_type": row.machine_type,
+                "status": row.status,
+                "location": row.location,
+            }
+        )
+
+    def _evidence(
+        self, machine_id: str
+    ) -> tuple[
+        tuple[SensorReadingOutput, ...],
+        tuple[IncidentOutput, ...],
+        tuple[MaintenanceRecordOutput, ...],
+    ]:
+        with self._session_factory() as session:
+            readings = SensorReadingRepository(session).for_machine(
+                machine_id, limit=100
+            )
+            incidents = IncidentRepository(session).search(machine_id, limit=5)
+            maintenance = MaintenanceRepository(session).for_machine(
+                machine_id, limit=5
+            )
+            return (
+                tuple(
+                    SensorReadingOutput(
+                        reading_id=row.reading_id,
+                        machine_id=row.machine_id,
+                        sensor_type=row.sensor_type,
+                        value=row.value,
+                        unit=row.unit,
+                        recorded_at=row.recorded_at,
+                    )
+                    for row in readings
+                ),
+                tuple(
+                    IncidentOutput(
+                        incident_id=row.incident_id,
+                        machine_id=row.machine_id,
+                        occurred_at=row.occurred_at,
+                        severity=row.severity,
+                        summary=row.summary,
+                        root_cause=row.root_cause,
+                        resolution=row.resolution,
+                    )
+                    for row in incidents
+                ),
+                tuple(
+                    MaintenanceRecordOutput(
+                        record_id=row.record_id,
+                        machine_id=row.machine_id,
+                        performed_at=row.performed_at,
+                        maintenance_type=row.maintenance_type,
+                        description=row.description,
+                        technician_id=row.technician_id,
+                    )
+                    for row in maintenance
+                ),
+            )
 
     async def chat(self, request: ChatRequest, *, request_id: str) -> ChatResponse:
         now = datetime.now(UTC)
@@ -62,26 +161,38 @@ class MockRuntime:
             created_at=now,
             updated_at=now,
         )
-        return ChatResponse(
-            request_id=request_id,
-            session_id=session_id,
-            result=AgentRecommendation(
+        try:
+            sensor_data, incidents, maintenance = self._evidence(machine_id)
+            recommendation = await self._generator.generate(
+                RecommendationContext(
+                    machine_id=machine_id,
+                    message=request.message,
+                    intent=classify_intent(request.message),
+                    sensor_data=sensor_data,
+                    incidents=incidents,
+                    maintenance=maintenance,
+                )
+            )
+        except SQLAlchemyError:
+            recommendation = AgentRecommendation(
                 machine_id=machine_id,
-                current_condition="Local mock mode: no live diagnosis was performed.",
+                current_condition="Local mock mode: database evidence is unavailable.",
                 severity=Severity.NORMAL,
-                confidence=1.0,
+                confidence=0.0,
                 observations=(),
                 possible_causes=(),
                 recommended_checks=(
                     RecommendedCheck(
-                        instruction="Connect an approved cloud runtime for diagnosis.",
-                        rationale=(
-                            "Local mode intentionally performs no paid model calls."
-                        ),
+                        instruction="Restore the local database connection.",
+                        rationale="A grounded diagnosis requires machine evidence.",
                     ),
                 ),
                 safety_notice="Advisory only. Follow approved safety procedures.",
-            ),
+            )
+        return ChatResponse(
+            request_id=request_id,
+            session_id=session_id,
+            result=recommendation,
         )
 
     async def stream(
@@ -98,9 +209,44 @@ class MockRuntime:
             data=response.result.model_dump(mode="json"),
         )
 
+    async def list(self) -> tuple[Machine, ...]:
+        try:
+            with self._session_factory() as session:
+                rows = MachineRepository(session).list(limit=100)
+                return tuple(self._machine(row) for row in rows)
+        except SQLAlchemyError:
+            return tuple(MACHINES.values())
+
     async def status(self, machine_id: str) -> MachineStatusResponse | None:
-        machine = MACHINES.get(machine_id)
-        return MachineStatusResponse(machine=machine) if machine is not None else None
+        try:
+            with self._session_factory() as session:
+                row = MachineRepository(session).get(machine_id)
+                if row is None:
+                    return None
+                readings = SensorReadingRepository(session).for_machine(
+                    machine_id, limit=100
+                )
+                return MachineStatusResponse(
+                    machine=self._machine(row),
+                    latest_readings=tuple(
+                        SensorReadingOutput(
+                            reading_id=item.reading_id,
+                            machine_id=item.machine_id,
+                            sensor_type=item.sensor_type,
+                            value=item.value,
+                            unit=item.unit,
+                            recorded_at=item.recorded_at,
+                        )
+                        for item in readings
+                    ),
+                )
+        except SQLAlchemyError:
+            machine = MACHINES.get(machine_id)
+            return (
+                MachineStatusResponse(machine=machine)
+                if machine is not None
+                else None
+            )
 
     async def get(self, session_id: str) -> AgentSession | None:
         return self._sessions.get(session_id)

@@ -30,7 +30,7 @@ class ChatTurn:
 
 @dataclass(slots=True)
 class CopilotUIState:
-    selected_machine_id: str = "P-104"
+    selected_machine_id: str = "P-101"
     session_id: str | None = None
     turns: list[ChatTurn] = field(default_factory=list)
     submitted_feedback_request_ids: set[str] = field(default_factory=set)
