@@ -70,7 +70,7 @@ Open:
 
 - Streamlit: <http://localhost:8501>
 - FastAPI documentation: <http://localhost:8000/docs>
-- MLflow tracing and experiments: <http://localhost:5000>
+- MLflow tracing and experiments: <http://localhost:5001>
 - liveness: <http://localhost:8000/health>
 - dependency readiness: <http://localhost:8000/ready>
 
