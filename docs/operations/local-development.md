@@ -1,8 +1,8 @@
 # Local development
 
 The containerized local environment runs PostgreSQL, database initialization,
-the FastAPI service, and the Streamlit interface without Azure credentials or
-paid model calls.
+an MLflow tracking server, the FastAPI service, and the Streamlit interface
+without Azure credentials or paid model calls.
 
 ## Prerequisites
 
@@ -25,21 +25,34 @@ Open:
 
 - Streamlit UI: <http://localhost:8501>
 - FastAPI documentation: <http://localhost:8000/docs>
+- MLflow tracing UI: <http://localhost:5000>
 - API liveness: <http://localhost:8000/health>
 
 Inspect container state and logs with:
 
 ```bash
 docker compose ps
-docker compose logs --follow api ui
+docker compose logs --follow api ui mlflow
 ```
+
+MLflow stores trace and experiment metadata in an isolated `mlflow` database
+inside the local PostgreSQL service. Artifacts are served through the tracking
+server and persisted in the `copilot_mlflow_artifacts` Docker volume. FastAPI
+uses `http://mlflow:5000` internally and records explicit request spans plus
+supported LangChain/LangGraph traces in the `industrial-operations-copilot`
+experiment. Tracing fails open, so an MLflow outage cannot change a diagnostic
+result.
+
+After submitting a diagnostic request in Streamlit, open MLflow and select the
+copilot experiment to inspect its traces. The browser uses port 5000; container
+clients must continue using the Compose hostname `mlflow`.
 
 ## Configuration
 
-`.env.example` contains local-only defaults. Change host ports if 5432, 8000,
-or 8501 are already in use. Compose supplies the internal database URL and the
-internal `http://api:8000` API address; do not replace container hostnames with
-`localhost` inside Compose.
+`.env.example` contains local-only defaults. Change host ports if 5432, 5000,
+8000, or 8501 are already in use. Compose supplies internal database, MLflow,
+and API addresses; do not replace container hostnames with `localhost` inside
+Compose.
 
 The local stack intentionally has no Azure Search key or model endpoint. Its
 startup, database, health, and interface paths therefore require no paid cloud
