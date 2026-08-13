@@ -26,7 +26,9 @@ ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
 
 RUN addgroup --system --gid 10001 copilot \
-    && adduser --system --uid 10001 --ingroup copilot --home /app copilot
+    && adduser --system --uid 10001 --ingroup copilot --home /app copilot \
+    && mkdir -p /app/mlartifacts \
+    && chown copilot:copilot /app/mlartifacts
 
 WORKDIR /app
 COPY --from=builder --chown=copilot:copilot /app/.venv ./.venv
