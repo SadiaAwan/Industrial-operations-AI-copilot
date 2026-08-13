@@ -4,7 +4,8 @@ FROM python:3.12.11-slim-bookworm AS builder
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
-    UV_PYTHON_DOWNLOADS=never
+    UV_PYTHON_DOWNLOADS=never \
+    UV_PROJECT_ENVIRONMENT=/app/.venv
 
 COPY --from=uv /uv /uvx /bin/
 WORKDIR /build
@@ -28,7 +29,7 @@ RUN addgroup --system --gid 10001 copilot \
     && adduser --system --uid 10001 --ingroup copilot --home /app copilot
 
 WORKDIR /app
-COPY --from=builder --chown=copilot:copilot /build/.venv ./.venv
+COPY --from=builder --chown=copilot:copilot /app/.venv ./.venv
 COPY --from=builder --chown=copilot:copilot /build/app ./app
 COPY --from=builder --chown=copilot:copilot /build/migrations ./migrations
 COPY --from=builder --chown=copilot:copilot /build/scripts ./scripts
