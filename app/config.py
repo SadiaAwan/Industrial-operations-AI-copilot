@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     mlflow_tracking_uri: str | None = None
     mlflow_experiment_name: str = "industrial-operations-copilot"
     mlflow_langchain_autolog: bool = True
+    mlflow_database_name: str = Field(
+        default="mlflow", pattern=r"^[a-z][a-z0-9_]{0,62}$"
+    )
 
 
 @lru_cache
