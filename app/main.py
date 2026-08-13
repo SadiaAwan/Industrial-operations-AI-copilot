@@ -34,6 +34,7 @@ from app.observability.logging import (
     safe_log,
 )
 from app.observability.metrics import ObservabilityMetrics
+from app.observability.mlflow_utils import configure_mlflow
 from app.observability.tracing import MlflowTracer, Tracer
 
 RequestHandler = Callable[[Request], Awaitable[Response]]
@@ -131,6 +132,7 @@ def create_app(
 
 
 settings = get_settings()
+configure_mlflow(settings)
 if settings.runtime_mode == "mock":
     from app.api.mock_services import build_mock_services
 
