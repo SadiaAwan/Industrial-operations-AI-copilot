@@ -42,12 +42,13 @@ def test_images_have_non_root_runtime_and_healthcheck(dockerfile: Path) -> None:
 def test_compose_declares_ordered_local_stack() -> None:
     content = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
 
-    for service in ("postgres:", "database-init:", "api:", "ui:"):
+    for service in ("postgres:", "database-init:", "mlflow:", "api:", "ui:"):
         assert service in content
     assert "condition: service_healthy" in content
     assert "condition: service_completed_successfully" in content
     assert "RUNTIME_MODE: mock" in content
     assert "COPILOT_UI_API_BASE_URL: http://api:8000" in content
+    assert "MLFLOW_TRACKING_URI: http://mlflow:5000" in content
 
 
 @pytest.mark.skipif(DOCKER is None, reason="Docker is not installed")
@@ -78,9 +79,12 @@ def test_local_stack_starts_non_root_and_ui_reaches_api(
         "http://127.0.0.1:8501/_stcore/health", timeout=5
     ) as response:
         assert response.status == 200
+    with urllib.request.urlopen("http://127.0.0.1:5000/health", timeout=5) as response:
+        assert response.status == 200
 
     assert run_compose("exec", "-T", "api", "id", "-u").stdout.strip() == "10001"
     assert run_compose("exec", "-T", "ui", "id", "-u").stdout.strip() == "10001"
+    assert run_compose("exec", "-T", "mlflow", "id", "-u").stdout.strip() == "10001"
     internal_health = run_compose(
         "exec",
         "-T",
