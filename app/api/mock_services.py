@@ -243,9 +243,7 @@ class MockRuntime:
         except SQLAlchemyError:
             machine = MACHINES.get(machine_id)
             return (
-                MachineStatusResponse(machine=machine)
-                if machine is not None
-                else None
+                MachineStatusResponse(machine=machine) if machine is not None else None
             )
 
     async def get(self, session_id: str) -> AgentSession | None:
