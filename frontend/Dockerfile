@@ -20,6 +20,7 @@ RUN uv sync --frozen --no-dev
 FROM python:3.12.11-slim-bookworm AS runtime
 
 ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH=/app \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     STREAMLIT_BROWSER_GATHER_USAGE_STATS=false \

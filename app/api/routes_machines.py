@@ -5,9 +5,16 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.dependencies import CoreServices, get_core_services
-from app.schemas.api import MachineStatusResponse
+from app.schemas.api import MachineListResponse, MachineStatusResponse
 
 router = APIRouter(prefix="/api/v1/machines", tags=["machines"])
+
+
+@router.get("", response_model=MachineListResponse)
+async def list_machines(
+    services: Annotated[CoreServices, Depends(get_core_services)],
+) -> MachineListResponse:
+    return MachineListResponse(machines=await services.machines.list())
 
 
 @router.get("/{machine_id}/status", response_model=MachineStatusResponse)

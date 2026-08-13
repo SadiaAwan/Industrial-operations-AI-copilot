@@ -11,7 +11,12 @@ import httpx
 from pydantic import BaseModel, ValidationError
 
 from app.schemas.actions import ApprovalActionResponse, ApprovalDecisionRequest
-from app.schemas.api import APIErrorResponse, MachineStatusResponse, ReadinessResponse
+from app.schemas.api import (
+    APIErrorResponse,
+    MachineListResponse,
+    MachineStatusResponse,
+    ReadinessResponse,
+)
 from app.schemas.chat import ChatRequest, ChatResponse, ChatStreamEvent
 from app.schemas.feedback import FeedbackCreate, FeedbackResponse
 
@@ -60,6 +65,10 @@ class CopilotAPIClient:
     def get_machine_status(self, machine_id: str) -> MachineStatusResponse:
         response = self._request("GET", f"/api/v1/machines/{machine_id}/status")
         return self._validate(MachineStatusResponse, response.json())
+
+    def list_machines(self) -> MachineListResponse:
+        response = self._request("GET", "/api/v1/machines")
+        return self._validate(MachineListResponse, response.json())
 
     def chat(self, payload: ChatRequest) -> ChatResponse:
         response = self._request(

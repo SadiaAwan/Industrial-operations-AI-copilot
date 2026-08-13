@@ -8,6 +8,7 @@ from typing import Protocol, cast
 
 from fastapi import Request
 
+from app.domain.machine import Machine
 from app.domain.session import AgentSession
 from app.schemas.actions import ApprovalActionResponse, ApprovalDecisionRequest
 from app.schemas.api import DependencyStatus, MachineStatusResponse
@@ -24,6 +25,8 @@ class ChatAPI(Protocol):
 
 
 class MachineAPI(Protocol):
+    async def list(self) -> tuple[Machine, ...]: ...
+
     async def status(self, machine_id: str) -> MachineStatusResponse | None: ...
 
 

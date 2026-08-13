@@ -25,6 +25,10 @@ class MachineStatusResponse(DomainModel):
     latest_readings: tuple[SensorReadingOutput, ...] = ()
 
 
+class MachineListResponse(DomainModel):
+    machines: tuple[Machine, ...]
+
+
 class DependencyStatus(DomainModel):
     name: str = Field(min_length=1)
     status: Literal["ready", "degraded", "unavailable"]

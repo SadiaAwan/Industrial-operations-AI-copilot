@@ -54,7 +54,7 @@ def test_selecting_same_machine_preserves_session() -> None:
     state = CopilotUIState()
     state.record_turn("Status", response(1), InteractionMetrics(latency_ms=1))
 
-    state.select_machine("P-104")
+    state.select_machine("P-101")
 
     assert state.session_id == "SESSION-1"
     assert len(state.turns) == 1
