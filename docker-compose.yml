@@ -6,6 +6,10 @@ x-api-environment: &api-environment
   DATABASE_POOL_SIZE: ${DATABASE_POOL_SIZE:-5}
   DATABASE_MAX_OVERFLOW: ${DATABASE_MAX_OVERFLOW:-10}
   DATABASE_POOL_TIMEOUT_SECONDS: ${DATABASE_POOL_TIMEOUT_SECONDS:-30}
+  MLFLOW_TRACKING_URI: http://mlflow:5000
+  MLFLOW_EXPERIMENT_NAME: ${MLFLOW_EXPERIMENT_NAME:-industrial-operations-copilot}
+  MLFLOW_LANGCHAIN_AUTOLOG: ${MLFLOW_LANGCHAIN_AUTOLOG:-true}
+  MLFLOW_DATABASE_NAME: ${MLFLOW_DATABASE_NAME:-mlflow}
 
 services:
   postgres:
@@ -34,12 +38,50 @@ services:
     command:
       - /bin/sh
       - -ec
-      - alembic upgrade head && python -m scripts.seed_database
+      - python -m scripts.init_mlflow_database && alembic upgrade head && python -m scripts.seed_database
     environment: *api-environment
     depends_on:
       postgres:
         condition: service_healthy
     restart: "no"
+
+  mlflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      - mlflow
+      - server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5000"
+      - --backend-store-uri
+      - postgresql+psycopg://${POSTGRES_USER:-copilot}:${POSTGRES_PASSWORD:-copilot}@postgres:5432/${MLFLOW_DATABASE_NAME:-mlflow}
+      - --artifacts-destination
+      - /app/mlartifacts
+      - --allowed-hosts
+      - mlflow:5000,localhost:*,127.0.0.1:*
+    environment:
+      MLFLOW_ENABLE_PROXY_MULTIPART_UPLOAD: "true"
+    ports:
+      - "${MLFLOW_PORT:-5001}:5000"
+    depends_on:
+      database-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/health', timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+    volumes:
+      - copilot_mlflow_artifacts:/app/mlartifacts
+    restart: unless-stopped
 
   api:
     build:
@@ -76,3 +118,4 @@ services:
 
 volumes:
   copilot_postgres_data:
+  copilot_mlflow_artifacts:

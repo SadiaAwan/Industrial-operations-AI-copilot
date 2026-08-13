@@ -217,5 +217,10 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# MLflow local fallback state
+mlflow.db
+mlruns/
+mlartifacts/
+
 .DS_store
 .DS_Store 
