@@ -5,8 +5,13 @@ from app.config import Settings
 from app.main import create_app
 
 
-def test_mock_runtime_supports_local_ui_without_cloud_calls() -> None:
-    services = build_mock_services(Settings(runtime_mode="mock"))
+def test_mock_runtime_supports_local_ui_without_database_or_cloud_calls() -> None:
+    services = build_mock_services(
+        Settings(
+            runtime_mode="mock",
+            database_url="postgresql+psycopg://copilot:copilot@127.0.0.1:1/copilot",
+        )
+    )
 
     with TestClient(create_app(services=services)) as client:
         machines = client.get("/api/v1/machines")
@@ -19,8 +24,10 @@ def test_mock_runtime_supports_local_ui_without_cloud_calls() -> None:
     assert machine.status_code == 200
     assert machine.json()["machine"]["machine_id"] == "P-104"
     assert response.status_code == 200
-    assert "vibration_rms=" in response.json()["result"]["current_condition"]
-    assert response.json()["result"]["observations"]
+    assert response.json()["result"]["current_condition"] == (
+        "Local mock mode: database evidence is unavailable."
+    )
+    assert response.json()["result"]["observations"] == []
     assert response.json()["result"]["citations"] == []
     assert machines.status_code == 200
     assert [item["machine_id"] for item in machines.json()["machines"]] == [
