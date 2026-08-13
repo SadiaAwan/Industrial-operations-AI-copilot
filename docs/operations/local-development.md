@@ -25,7 +25,7 @@ Open:
 
 - Streamlit UI: <http://localhost:8501>
 - FastAPI documentation: <http://localhost:8000/docs>
-- MLflow tracing UI: <http://localhost:5000>
+- MLflow tracing UI: <http://localhost:5001>
 - API liveness: <http://localhost:8000/health>
 
 Inspect container state and logs with:
@@ -49,7 +49,7 @@ clients must continue using the Compose hostname `mlflow`.
 
 ## Configuration
 
-`.env.example` contains local-only defaults. Change host ports if 5432, 5000,
+`.env.example` contains local-only defaults. Change host ports if 5432, 5001,
 8000, or 8501 are already in use. Compose supplies internal database, MLflow,
 and API addresses; do not replace container hostnames with `localhost` inside
 Compose.
